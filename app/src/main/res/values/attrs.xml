@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+    <attr name="colorSurface" format="color"/>
+
+    <attr name="rangeSeekBarStyle" format="reference"/>
+
+
+    <declare-styleable name="RangeSeekBar">
+        <attr name="minValue" format="integer"/>
+        <attr name="maxValue" format="integer"/>
+        <attr name="minStartValue" format="integer"/>
+        <attr name="maxStartValue" format="integer"/>
+        <attr name="gap" format="integer"/>
+        <attr name="backgroundColor" format="color"/>
+        <attr name="thumbColor" format="color"/>
+        <attr name="thumbWidth" format="dimension"/>
+        <attr name="thumbStrokeWidth" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="ChartView">
+        <attr name="strokeWidth" format="dimension"/>
+    </declare-styleable>
+</resources>

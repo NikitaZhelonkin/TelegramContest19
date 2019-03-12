@@ -1,39 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="@string/followers"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:textStyle="bold"
-        android:textColor="@android:color/black"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ru.zhelonkin.tgcontest.widget.ChartView
-        android:id="@+id/chart_view"
-        android:layout_width="0dp"
-        android:layout_height="270dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title" />
-
-
-    <ru.zhelonkin.tgcontest.widget.DoubleSeekBar
-        android:id="@+id/seekBar"
-        android:layout_marginTop="16dp"
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
-        app:layout_constraintTop_toBottomOf="@id/chart_view"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:background="?colorSurface"
+        android:padding="16dp"
+        tools:context=".MainActivity">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/followers"
+            android:textColor="?colorAccent"
+            android:textStyle="bold"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ru.zhelonkin.tgcontest.widget.ChartView
+            android:id="@+id/chart_view"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="16dp"
+            app:strokeWidth="2dp"
+            app:layout_constraintDimensionRatio="1.2"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title" />
+
+        <ru.zhelonkin.tgcontest.widget.ChartView
+            android:id="@+id/chart_preview"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            app:strokeWidth="1dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/chart_view" />
 
 
+        <ru.zhelonkin.tgcontest.widget.RangeSeekBar
+            android:id="@+id/rangeBar"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@id/chart_preview"
+            app:layout_constraintTop_toTopOf="@id/chart_preview" />
 
-</android.support.constraint.ConstraintLayout>
+    </android.support.constraint.ConstraintLayout>
+
+</FrameLayout>

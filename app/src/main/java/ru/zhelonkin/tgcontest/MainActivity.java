@@ -1,29 +1,29 @@
 package ru.zhelonkin.tgcontest;
 
-import android.animation.ObjectAnimator;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
 import android.widget.Toast;
 
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.task.GetChartDataTask;
 import ru.zhelonkin.tgcontest.widget.ChartView;
-import ru.zhelonkin.tgcontest.widget.DoubleSeekBar;
+import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 
-public class MainActivity extends AppCompatActivity implements GetChartDataTask.Callback, DoubleSeekBar.OnSeekBarChangeListener {
+public class MainActivity extends AppCompatActivity implements GetChartDataTask.Callback, RangeSeekBar.OnRangeSeekBarChangeListener {
 
     private GetChartDataTask mGetChartDataTask;
 
     private ChartView mChartView;
+    private ChartView mChartPreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mChartView = findViewById(R.id.chart_view);
-        DoubleSeekBar seekBar = findViewById(R.id.seekBar);
-        seekBar.setOnSeekBarChangeListener(this);
+        mChartPreview = findViewById(R.id.chart_preview);
+        RangeSeekBar rangeSeekBar = findViewById(R.id.rangeBar);
+        rangeSeekBar.setOnRangeSeekBarChangeListener(this);
         loadData();
 
     }
@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements GetChartDataTask.
     @Override
     public void onSuccess(ChartData chartData) {
         mChartView.setGraph(chartData.getGraphs().get(0));
+        mChartPreview.setGraph(chartData.getGraphs().get(0));
     }
 
     @Override
@@ -50,8 +51,7 @@ public class MainActivity extends AppCompatActivity implements GetChartDataTask.
     }
 
     @Override
-    public void onProgressChanged(DoubleSeekBar doubleSeekBar, float leftProgress, float rightProgress) {
-        mChartView.setLeftAndRight(leftProgress, rightProgress);
+    public void onRangeChanged(float minValue, float maxValue, boolean fromUser) {
+        mChartView.setLeftAndRight(minValue / 100f, maxValue / 100f);
     }
-
 }

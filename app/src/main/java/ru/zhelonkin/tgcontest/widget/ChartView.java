@@ -2,14 +2,17 @@ package ru.zhelonkin.tgcontest.widget;
 
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.View;
 
+import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.model.PointL;
@@ -22,7 +25,6 @@ public class ChartView extends View {
     private float mChartScaleY = 1;
 
     private float mChartLeft = 0;
-    private float mChartBottom = 0;
 
     private float mTargetChartScaleY = mChartScaleY;
 
@@ -33,34 +35,39 @@ public class ChartView extends View {
 
     public ChartView(Context context) {
         super(context);
-        init(context);
+        init(context, null);
     }
 
     public ChartView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init(context);
+        init(context, attrs);
     }
 
     public ChartView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context);
+        init(context, attrs);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public ChartView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        init(context);
+        init(context, attrs);
     }
 
-    private void init(Context context) {
-        mLinePaint.setStrokeWidth(6);
+    private void init(Context context, AttributeSet attrs) {
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.ChartView);
+        int strokeWidth = a.getDimensionPixelSize(R.styleable.ChartView_strokeWidth, 1);
+        a.recycle();
+
+        mLinePaint.setStrokeWidth(strokeWidth);
         mLinePaint.setStyle(Paint.Style.STROKE);
         mLinePaint.setStrokeCap(Paint.Cap.ROUND);
         mLinePaint.setStrokeJoin(Paint.Join.ROUND);
     }
 
-    public void setGraph(Graph graph) {
+    public void setGraph(@NonNull Graph graph) {
         mGraph = graph;
+        setChartScaleY(calculateScaleY());
         invalidate();
     }
 
@@ -97,7 +104,7 @@ public class ChartView extends View {
         super.onDraw(canvas);
         if (mGraph == null) return;
         int saveCount = canvas.save();
-        canvas.translate(translationX(), translationY());
+        canvas.translate(translationX(), 0);
 
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
@@ -123,12 +130,13 @@ public class ChartView extends View {
     }
 
     private float calculateScaleY() {
+        if (mGraph == null) return 1;
         float maxY = Float.MIN_VALUE;
         for (Line line : mGraph.getLines()) {
             PointL[] points = line.getPoints();
             for (int i = 1; i < points.length; i++) {
                 float x = pointX(points[i].x) + translationX();
-                if (x > -getWidth()/3 && x < getWidth()*4/3) {
+                if (x > -getWidth() / 4 && x < getWidth() * 5 / 4) {
                     if (points[i].y > maxY) {
                         maxY = points[i].y;
                     }
@@ -140,10 +148,6 @@ public class ChartView extends View {
 
     private float translationX() {
         return -mGraph.rangeX() * scaleX() * mChartLeft;
-    }
-
-    private float translationY() {
-        return mGraph.rangeY() * scaleY() * mChartBottom;
     }
 
     private float pointX(long x) {

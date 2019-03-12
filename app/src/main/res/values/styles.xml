@@ -6,6 +6,16 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/colorBackground</item>
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="rangeSeekBarStyle">@style/RangeSeekBar</item>
+    </style>
+
+    <style name="RangeSeekBar">
+        <item name="backgroundColor">#66cccccc</item>
+        <item name="thumbColor">#cccccccc</item>
+        <item name="thumbStrokeWidth">1dp</item>
+        <item name="thumbWidth">4dp</item>
     </style>
 
 </resources>
