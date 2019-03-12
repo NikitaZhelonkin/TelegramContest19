@@ -43,6 +43,10 @@ public class RangeSeekBar extends View {
     private boolean mIsDragging;
 
     private int mScaledEdgeSlop;
+    private int mScaledTouchSlop;
+
+    private float mTouchDownX;
+    private float mLastX;
 
     private int mActivePointerId = INVALID_POINTER_ID;
 
@@ -81,6 +85,7 @@ public class RangeSeekBar extends View {
 
         mDragMode = null;
 
+        mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mScaledEdgeSlop = ViewConfiguration.get(context).getScaledEdgeSlop();
 
         setWillNotDraw(false);
@@ -126,17 +131,25 @@ public class RangeSeekBar extends View {
 
     private void trackTouchEvent(MotionEvent event) {
         final int pointerIndex = event.findPointerIndex(mActivePointerId);
-        try {
-            final float x = event.getX(pointerIndex);
-
-            if (DragMode.LEFT.equals(mDragMode)) {
-                setLeftValue(coordToValue(x));
-            } else if (DragMode.RIGHT.equals(mDragMode)) {
-                setRightValue(coordToValue(x));
+        final float x = event.getX(pointerIndex);
+        final float dx = x - mLastX;
+        if (DragMode.LEFT.equals(mDragMode)) {
+            setLeftValue(coordToValue(valueToCoord(mLeftValue) + dx));
+        } else if (DragMode.RIGHT.equals(mDragMode)) {
+            setRightValue(coordToValue(valueToCoord(mRightValue) + dx));
+        } else if (DragMode.BOTH.equals(mDragMode)) {
+            final float range = mRightValue - mLeftValue;
+            if (dx > 0) {
+                setRightValue(coordToValue(valueToCoord(mRightValue) + dx));
+                setLeftValue(mRightValue - range);
+            } else {
+                setLeftValue(coordToValue(valueToCoord(mLeftValue) + dx));
+                setRightValue(mLeftValue + range);
             }
-            notifyRangeChanged(true);
-        } catch (Exception ignored) {
+
         }
+        mLastX = x;
+        notifyRangeChanged(true);
     }
 
     private void notifyRangeChanged(boolean fromUser) {
@@ -146,45 +159,13 @@ public class RangeSeekBar extends View {
     }
 
     private DragMode evalDragMode(float touchX) {
-        DragMode result = null;
-
-        boolean minThumbPressed = isInThumbRange(touchX, mLeftValue);
-        boolean maxThumbPressed = isInThumbRange(touchX, mRightValue);
-        if (minThumbPressed && maxThumbPressed) {
-            // if both thumbs are pressed (they lie on top of each other), choose the one with more room to drag. this avoids "stalling" the thumbs in a corner, not being able to drag them apart anymore.
-            result = (touchX / getWidth() > 0.5f) ? DragMode.LEFT : DragMode.RIGHT;
-        } else if (minThumbPressed) {
-            result = DragMode.LEFT;
-        } else if (maxThumbPressed) {
-            result = DragMode.RIGHT;
-        }
-        if (result == null) {
-            result = findClosestThumb(touchX);
-        }
-        return result;
-    }
-
-    private boolean isInThumbRange(float touchX, double value) {
-        float thumbPos = valueToCoord(value);
-        float left = thumbPos - (mScaledEdgeSlop);
-        float right = thumbPos + (mScaledEdgeSlop);
-        float x = touchX - (mScaledEdgeSlop);
-        if (thumbPos > (getWidth() - mScaledEdgeSlop * 2)) x = touchX;
-        return (x >= left && x <= right);
-    }
-
-    private DragMode findClosestThumb(float touchX) {
-        float screenMinX = valueToCoord(mLeftValue);
-        float screenMaxX = valueToCoord(mRightValue);
-        if (touchX >= screenMaxX) {
-            return DragMode.RIGHT;
-        } else if (touchX <= screenMinX) {
+        if (touchX < valueToCoord(mLeftValue) + mScaledEdgeSlop) {
             return DragMode.LEFT;
+        } else if (touchX > valueToCoord(mRightValue) - mScaledEdgeSlop) {
+            return DragMode.RIGHT;
+        } else {
+            return DragMode.BOTH;
         }
-
-        double minDiff = Math.abs(screenMinX - touchX);
-        double maxDiff = Math.abs(screenMaxX - touchX);
-        return minDiff < maxDiff ? DragMode.LEFT : DragMode.RIGHT;
     }
 
     private void onStartTrackingTouch() {
@@ -254,7 +235,11 @@ public class RangeSeekBar extends View {
         mPaint.setColor(mThumbColor);
         mPaint.setStrokeWidth(mThumbStrokeWidth);
 
-        canvas.drawRect(min, mThumbStrokeWidth / 2f, max, getHeight() - mThumbStrokeWidth / 2f, mPaint);
+        canvas.drawRect(min + mThumbWidth + mPaint.getStrokeWidth() / 2f,
+                mPaint.getStrokeWidth() / 2f,
+                max - mThumbWidth - mPaint.getStrokeWidth() / 2f,
+                getHeight() - mPaint.getStrokeWidth() / 2f,
+                mPaint);
 
         mPaint.setStyle(Paint.Style.FILL);
         canvas.drawRect(min, 0, min + mThumbWidth, getHeight(), mPaint);
@@ -281,22 +266,20 @@ public class RangeSeekBar extends View {
 
             case MotionEvent.ACTION_DOWN:
                 mActivePointerId = event.getPointerId(event.getPointerCount() - 1);
-                int pointerIndex = event.findPointerIndex(mActivePointerId);
-                float downMotionX = event.getX(pointerIndex);
-
-                mDragMode = evalDragMode(downMotionX);
-
-                if (mDragMode == null) return super.onTouchEvent(event);
-
-                startDrag(event);
-
+                mTouchDownX = event.getX(event.getPointerCount() - 1);
+                mLastX = mTouchDownX;
+                mDragMode = evalDragMode(mTouchDownX);
                 break;
-
             case MotionEvent.ACTION_MOVE:
                 if (mDragMode != null) {
-
                     if (mIsDragging) {
                         trackTouchEvent(event);
+                    } else {
+                        final float x = event.getX(event.findPointerIndex(mActivePointerId));
+                        if (Math.abs(x - mTouchDownX) > mScaledTouchSlop) {
+                            mLastX = x;
+                            startDrag(event);
+                        }
                     }
                 }
                 break;
@@ -306,8 +289,6 @@ public class RangeSeekBar extends View {
                     onStopTrackingTouch();
                     setPressed(false);
                 } else {
-                    // Touch up when we never crossed the touch slop threshold
-                    // should be interpreted as a tap-seek to that location.
                     onStartTrackingTouch();
                     trackTouchEvent(event);
                     onStopTrackingTouch();
@@ -316,17 +297,12 @@ public class RangeSeekBar extends View {
                 mDragMode = null;
                 invalidate();
                 break;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                break;
-            case MotionEvent.ACTION_POINTER_UP:
-                invalidate();
-                break;
             case MotionEvent.ACTION_CANCEL:
                 if (mIsDragging) {
                     onStopTrackingTouch();
                     setPressed(false);
                 }
-                invalidate(); // see above explanation
+                invalidate();
                 break;
         }
 

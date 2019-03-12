@@ -12,8 +12,8 @@
     </style>
 
     <style name="RangeSeekBar">
-        <item name="backgroundColor">#66cccccc</item>
-        <item name="thumbColor">#cccccccc</item>
+        <item name="backgroundColor">@color/seekBarBackgroundColor</item>
+        <item name="thumbColor">@color/seekBarThumbColor</item>
         <item name="thumbStrokeWidth">1dp</item>
         <item name="thumbWidth">4dp</item>
     </style>
