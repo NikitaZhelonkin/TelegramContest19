@@ -5,16 +5,26 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
 import ru.zhelonkin.tgcontest.model.ChartData;
+import ru.zhelonkin.tgcontest.model.Graph;
+import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.task.GetChartDataTask;
 import ru.zhelonkin.tgcontest.widget.ChartView;
+import ru.zhelonkin.tgcontest.widget.DynamicLinearLayout;
 import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 
-public class MainActivity extends AppCompatActivity implements GetChartDataTask.Callback, RangeSeekBar.OnRangeSeekBarChangeListener {
+public class MainActivity extends AppCompatActivity implements
+        GetChartDataTask.Callback,
+        RangeSeekBar.OnRangeSeekBarChangeListener,
+        MainAdapter.OnCheckChangedListener{
 
     private GetChartDataTask mGetChartDataTask;
 
     private ChartView mChartView;
     private ChartView mChartPreview;
+    private RangeSeekBar mRangeSeekBar;
+
+    private MainAdapter mMainAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,10 +32,13 @@ public class MainActivity extends AppCompatActivity implements GetChartDataTask.
         setContentView(R.layout.activity_main);
         mChartView = findViewById(R.id.chart_view);
         mChartPreview = findViewById(R.id.chart_preview);
-        RangeSeekBar rangeSeekBar = findViewById(R.id.rangeBar);
-        rangeSeekBar.setOnRangeSeekBarChangeListener(this);
-        loadData();
+        mRangeSeekBar = findViewById(R.id.rangeBar);
+        mRangeSeekBar.setOnRangeSeekBarChangeListener(this);
+        DynamicLinearLayout linesLayout = findViewById(R.id.line_list_layout);
+        linesLayout.setAdapter(mMainAdapter = new MainAdapter());
+        mMainAdapter.setOnCheckChangedListener(this);
 
+        loadData();
     }
 
     private void loadData() {
@@ -35,8 +48,11 @@ public class MainActivity extends AppCompatActivity implements GetChartDataTask.
 
     @Override
     public void onSuccess(ChartData chartData) {
-        mChartView.setGraph(chartData.getGraphs().get(0));
-        mChartPreview.setGraph(chartData.getGraphs().get(0));
+        Graph graph = chartData.getGraphs().get(0);
+        mChartView.setGraph(graph);
+        mChartPreview.setGraph(graph);
+        mMainAdapter.setGraph(graph);
+        invalidateChartRange();
     }
 
     @Override
@@ -51,7 +67,17 @@ public class MainActivity extends AppCompatActivity implements GetChartDataTask.
     }
 
     @Override
-    public void onRangeChanged(float minValue, float maxValue, boolean fromUser) {
-        mChartView.setLeftAndRight(minValue / 100f, maxValue / 100f);
+    public void onRangeChanged(float leftValue, float rightValue, boolean fromUser) {
+        invalidateChartRange();
+    }
+
+    @Override
+    public void onCheckChanged(Line line, boolean checked) {
+        mChartView.updateGraphLines();
+        mChartPreview.updateGraphLines();
+    }
+
+    private void invalidateChartRange() {
+        mChartView.setLeftAndRight(mRangeSeekBar.getLeftValue() / 100f, mRangeSeekBar.getRightValue() / 100f);
     }
 }

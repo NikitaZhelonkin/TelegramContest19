@@ -8,11 +8,31 @@ public class Line {
     private int mColor;
     private PointL[] mPoints;
 
+    private boolean mVisible;
+    private float mAlpha;
 
     public Line(PointL[] points, String name, int color) {
         mPoints = points;
         mName = name;
         mColor = color;
+        mVisible = true;
+        mAlpha = 1f;
+    }
+
+    public void setAlpha(float alpha) {
+        mAlpha = alpha;
+    }
+
+    public float getAlpha() {
+        return mAlpha;
+    }
+
+    public void setVisible(boolean visible) {
+        mVisible = visible;
+    }
+
+    public boolean isVisible() {
+        return mVisible;
     }
 
     public PointL[] getPoints() {

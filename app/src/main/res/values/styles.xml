@@ -9,6 +9,7 @@
         <item name="android:windowBackground">@color/colorBackground</item>
         <item name="colorSurface">@color/colorSurface</item>
         <item name="rangeSeekBarStyle">@style/RangeSeekBar</item>
+        <item name="android:textColorPrimary">@android:color/black</item>
     </style>
 
     <style name="RangeSeekBar">
@@ -16,6 +17,8 @@
         <item name="thumbColor">@color/seekBarThumbColor</item>
         <item name="thumbStrokeWidth">1dp</item>
         <item name="thumbWidth">4dp</item>
+        <item name="leftValue">70</item>
+        <item name="rightValue">100</item>
     </style>
 
 </resources>

@@ -6,6 +6,7 @@
     <color name="colorBackground">#F0F0F0</color>
     <color name="colorSurface">#FFFFFF</color>
 
-    <color name="seekBarBackgroundColor">#80ebf1f3</color>
+    <color name="seekBarBackgroundColor">#ccf3f6f8</color>
     <color name="seekBarThumbColor">#303f81b0</color>
+    <color name="colorDivider">#e0e0e0</color>
 </resources>

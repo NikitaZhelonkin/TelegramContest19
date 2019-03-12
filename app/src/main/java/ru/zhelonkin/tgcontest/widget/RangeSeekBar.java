@@ -68,33 +68,33 @@ public class RangeSeekBar extends View {
         DisplayMetrics dm = context.getResources().getDisplayMetrics();
 
         TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.RangeSeekBar, defStyleAttr, 0);
-        mMinValue = array.getFloat(R.styleable.RangeSeekBar_minValue, 0);
-        mMaxValue = array.getFloat(R.styleable.RangeSeekBar_maxValue, 100);
-        float leftStartValue = array.getFloat(R.styleable.RangeSeekBar_minStartValue, mMinValue);
-        float rightStartValue = array.getFloat(R.styleable.RangeSeekBar_maxStartValue, mMaxValue);
-        float gap = array.getFloat(R.styleable.RangeSeekBar_gap, (mMaxValue - mMinValue) / 10);
+
         mBackgroundColor = array.getColor(R.styleable.RangeSeekBar_backgroundColor, Color.GRAY);
         mThumbColor = array.getColor(R.styleable.RangeSeekBar_thumbColor, Color.BLACK);
         mThumbStrokeWidth = array.getDimensionPixelSize(R.styleable.RangeSeekBar_thumbStrokeWidth, (int) dm.density);
         mThumbWidth = array.getDimensionPixelSize(R.styleable.RangeSeekBar_thumbWidth, (int) (dm.density));
+        mMinValue = array.getFloat(R.styleable.RangeSeekBar_minValue, 0);
+        mMaxValue = array.getFloat(R.styleable.RangeSeekBar_maxValue, 100);
+        float leftValue = array.getFloat(R.styleable.RangeSeekBar_leftValue, mMinValue);
+        float rightValue = array.getFloat(R.styleable.RangeSeekBar_rightValue, mMaxValue);
+        float gap = array.getFloat(R.styleable.RangeSeekBar_gap, (mMaxValue - mMinValue) / 10);
 
         array.recycle();
-
 
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         mDragMode = null;
 
         mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-        mScaledEdgeSlop = ViewConfiguration.get(context).getScaledEdgeSlop();
+        mScaledEdgeSlop = (int)(ViewConfiguration.get(context).getScaledEdgeSlop() * 1.5f);
 
         setWillNotDraw(false);
 
         setGap(gap);
 
-        setLeftValue(leftStartValue);
+        setRightValue(rightValue);
 
-        setRightValue(rightStartValue);
+        setLeftValue(leftValue);
     }
 
     public void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener onRangeSeekbarChangeListener) {

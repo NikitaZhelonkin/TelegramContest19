@@ -62,7 +62,6 @@ public class Graph {
 
     private long calcMaxY() {
         long maxY = mLines.get(0).getPoints()[0].y;
-        ;
         for (Line line : mLines) {
             for (PointL p : line.getPoints()) {
                 if (p.y > maxY) maxY = p.y;

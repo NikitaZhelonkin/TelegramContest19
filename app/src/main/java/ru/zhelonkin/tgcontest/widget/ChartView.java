@@ -1,16 +1,24 @@
 package ru.zhelonkin.tgcontest.widget;
 
+import android.animation.Animator;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
+import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Graph;
@@ -29,6 +37,8 @@ public class ChartView extends View {
     private float mTargetChartScaleY = mChartScaleY;
 
     private ObjectAnimator mScaleYAnimator;
+
+    private AnimatorSet mLineAlphaAnimator;
 
     private Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -71,12 +81,36 @@ public class ChartView extends View {
         invalidate();
     }
 
+    public void updateGraphLines() {
+        setChartScaleYSmooth(calculateScaleY());
+
+        if (mLineAlphaAnimator != null) mLineAlphaAnimator.cancel();
+        List<Animator> animatorList = new ArrayList<>();
+        for (Line line : mGraph.getLines()) {
+            if (line.isVisible() && line.getAlpha() != 1) {
+                ObjectAnimator animator = ObjectAnimator.ofFloat(line, "alpha", 1);
+                animator.addUpdateListener(animation -> invalidate());
+                animatorList.add(animator);
+            } else if (!line.isVisible() && line.getAlpha() == 1) {
+                ObjectAnimator animator = ObjectAnimator.ofFloat(line, "alpha", 0);
+                animator.addUpdateListener(animation -> invalidate());
+                animatorList.add(animator);
+            }
+        }
+        mLineAlphaAnimator = new AnimatorSet();
+        mLineAlphaAnimator.playTogether(animatorList);
+        mLineAlphaAnimator.setInterpolator(new FastOutSlowInInterpolator());
+        mLineAlphaAnimator.setDuration(200);
+        mLineAlphaAnimator.start();
+        invalidate();
+    }
 
     public void setChartScaleYSmooth(float chartScaleY) {
         if (mTargetChartScaleY != chartScaleY) {
             mTargetChartScaleY = chartScaleY;
             if (mScaleYAnimator != null) mScaleYAnimator.cancel();
             mScaleYAnimator = ObjectAnimator.ofFloat(this, "chartScaleY", mTargetChartScaleY);
+            mScaleYAnimator.setInterpolator(new FastOutSlowInInterpolator());
             mScaleYAnimator.setDuration(200);
             mScaleYAnimator.start();
         }
@@ -116,6 +150,7 @@ public class ChartView extends View {
 
     private void drawLine(Canvas canvas, Line line) {
         mLinePaint.setColor(line.getColor());
+        mLinePaint.setAlpha((int) (255 * line.getAlpha()));
 
         PointL[] points = line.getPoints();
         float lastX = pointX(points[0].x);
@@ -133,6 +168,7 @@ public class ChartView extends View {
         if (mGraph == null) return 1;
         float maxY = Float.MIN_VALUE;
         for (Line line : mGraph.getLines()) {
+            if (!line.isVisible()) continue;
             PointL[] points = line.getPoints();
             for (int i = 1; i < points.length; i++) {
                 float x = pointX(points[i].x) + translationX();
