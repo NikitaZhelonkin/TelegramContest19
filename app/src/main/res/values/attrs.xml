@@ -3,6 +3,7 @@
 
 
     <attr name="colorSurface" format="color"/>
+    <attr name="colorDivider" format="color"/>
 
     <attr name="rangeSeekBarStyle" format="reference"/>
 

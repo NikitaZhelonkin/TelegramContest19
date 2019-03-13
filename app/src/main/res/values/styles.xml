@@ -9,7 +9,19 @@
         <item name="android:windowBackground">@color/colorBackground</item>
         <item name="colorSurface">@color/colorSurface</item>
         <item name="rangeSeekBarStyle">@style/RangeSeekBar</item>
-        <item name="android:textColorPrimary">@android:color/black</item>
+        <item name="android:textColorPrimary">@color/textColorPrimary</item>
+        <item name="colorDivider">@color/colorDivider</item>
+    </style>
+
+    <style name="AppTheme.Night" parent="Theme.AppCompat">
+        <item name="colorPrimary">@color/colorPrimaryNight</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDarkNight</item>
+        <item name="colorAccent">@color/colorAccentNight</item>
+        <item name="android:windowBackground">@color/colorBackgroundNight</item>
+        <item name="colorSurface">@color/colorSurfaceNight</item>
+        <item name="rangeSeekBarStyle">@style/RangeSeekBar.Night</item>
+        <item name="android:textColorPrimary">@color/textColorPrimaryNight</item>
+        <item name="colorDivider">@color/colorDividerNight</item>
     </style>
 
     <style name="RangeSeekBar">
@@ -19,6 +31,11 @@
         <item name="thumbWidth">4dp</item>
         <item name="leftValue">70</item>
         <item name="rightValue">100</item>
+    </style>
+
+    <style name="RangeSeekBar.Night">
+        <item name="backgroundColor">@color/seekBarBackgroundColorNight</item>
+        <item name="thumbColor">@color/seekBarThumbColorNight</item>
     </style>
 
 </resources>

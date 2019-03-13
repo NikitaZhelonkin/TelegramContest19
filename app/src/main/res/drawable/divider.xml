@@ -3,7 +3,7 @@
     android:insetLeft="54dp">
 
     <shape>
-        <solid android:color="@color/colorDivider" />
+        <solid android:color="?colorDivider" />
         <size android:height="1dp" />
     </shape>
 </inset>

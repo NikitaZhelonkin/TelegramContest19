@@ -2,6 +2,8 @@ package ru.zhelonkin.tgcontest;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import ru.zhelonkin.tgcontest.model.ChartData;
@@ -15,7 +17,7 @@ import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 public class MainActivity extends AppCompatActivity implements
         GetChartDataTask.Callback,
         RangeSeekBar.OnRangeSeekBarChangeListener,
-        MainAdapter.OnCheckChangedListener{
+        MainAdapter.OnCheckChangedListener {
 
     private GetChartDataTask mGetChartDataTask;
 
@@ -28,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(Prefs.isDarkMode(this) ? R.style.AppTheme_Night : R.style.AppTheme);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mChartView = findViewById(R.id.chart_view);
@@ -39,6 +42,20 @@ public class MainActivity extends AppCompatActivity implements
         mMainAdapter.setOnCheckChangedListener(this);
 
         loadData();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.theme) {
+            switchTheme();
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void loadData() {
@@ -79,5 +96,10 @@ public class MainActivity extends AppCompatActivity implements
 
     private void invalidateChartRange() {
         mChartView.setLeftAndRight(mRangeSeekBar.getLeftValue() / 100f, mRangeSeekBar.getRightValue() / 100f);
+    }
+
+    private void switchTheme() {
+        Prefs.setDarkMode(this, !Prefs.isDarkMode(this));
+        recreate();
     }
 }

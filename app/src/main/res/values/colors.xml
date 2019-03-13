@@ -9,4 +9,16 @@
     <color name="seekBarBackgroundColor">#ccf3f6f8</color>
     <color name="seekBarThumbColor">#303f81b0</color>
     <color name="colorDivider">#e0e0e0</color>
+    <color name="textColorPrimary">@android:color/black</color>
+
+    <color name="colorPrimaryNight">#212d3b</color>
+    <color name="colorPrimaryDarkNight">#1a242e</color>
+    <color name="colorAccentNight">#7bc4fb</color>
+    <color name="colorBackgroundNight">#151e27</color>
+    <color name="colorSurfaceNight">#1d2733</color>
+
+    <color name="seekBarBackgroundColorNight">#9916202b</color>
+    <color name="seekBarThumbColorNight">#3064b7f0</color>
+    <color name="colorDividerNight">#0b131e</color>
+    <color name="textColorPrimaryNight">@android:color/white</color>
 </resources>
