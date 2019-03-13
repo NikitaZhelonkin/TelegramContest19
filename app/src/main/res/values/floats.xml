@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="chart_ratio" format="float" type="integer">1.25</item>
+</resources>

@@ -6,6 +6,8 @@ import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
 import android.view.TextureView;
 
+import java.lang.ref.WeakReference;
+
 public class DrawingTextureView extends TextureView implements TextureView.SurfaceTextureListener {
 
     public interface Composer {
@@ -29,14 +31,12 @@ public class DrawingTextureView extends TextureView implements TextureView.Surfa
         setSurfaceTextureListener(this);
     }
 
-
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         drawingThread = new DrawingThread(new TextureViewHolder(this));
         drawingThread.setComposer(composer);
         drawingThread.setRunning(true);
         drawingThread.start();
-
     }
 
     public void setComposer(Composer composer) {
@@ -57,7 +57,6 @@ public class DrawingTextureView extends TextureView implements TextureView.Surfa
         boolean retry = true;
 
         drawingThread.setRunning(false);
-        drawingThread.stop();
 
         while (retry) {
             try {
@@ -87,7 +86,7 @@ public class DrawingTextureView extends TextureView implements TextureView.Surfa
 
         private final TextureView textureView;
 
-        public TextureViewHolder(TextureView textureView) {
+        TextureViewHolder(TextureView textureView) {
             this.textureView = textureView;
         }
 
@@ -104,18 +103,18 @@ public class DrawingTextureView extends TextureView implements TextureView.Surfa
 
     public static class DrawingThread extends Thread {
         private Composer mComposer;
-        private ISurfaceHolder surfaceHolder;
+        private final WeakReference<ISurfaceHolder> surfaceHolder;
         private boolean isRunning = false;
 
-        public DrawingThread(ISurfaceHolder surfaceHolder) {
-            this.surfaceHolder = surfaceHolder;
+        DrawingThread(ISurfaceHolder surfaceHolder) {
+            this.surfaceHolder = new WeakReference<>(surfaceHolder);
         }
 
-        public void setComposer(Composer composer) {
+        void setComposer(Composer composer) {
             mComposer = composer;
         }
 
-        public void setRunning(boolean run) {
+        void setRunning(boolean run) {
             isRunning = run;
         }
 
@@ -123,14 +122,21 @@ public class DrawingTextureView extends TextureView implements TextureView.Surfa
         public void run() {
             Canvas canvas;
             while (isRunning) {
-                canvas = surfaceHolder.lockCanvas();
+                ISurfaceHolder holder = surfaceHolder.get();
+                if (holder != null) {
+                    canvas = holder.lockCanvas();
 
-                if (canvas != null) {
-                    if (mComposer != null) {
-                        mComposer.draw(canvas);
+                    synchronized (surfaceHolder) {
+                        if (canvas != null) {
+                            if (mComposer != null) {
+                                mComposer.draw(canvas);
+                            }
+                            holder.unlockCanvasAndPost(canvas);
+                        }
                     }
-                    surfaceHolder.unlockCanvasAndPost(canvas);
                 }
+
+
             }
         }
 

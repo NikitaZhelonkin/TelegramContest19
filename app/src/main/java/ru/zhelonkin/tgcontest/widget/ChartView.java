@@ -136,14 +136,9 @@ public class ChartView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (mGraph == null) return;
-        int saveCount = canvas.save();
-        canvas.translate(translationX(), 0);
-
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
         }
-
-        canvas.restoreToCount(saveCount);
     }
 
 
@@ -170,7 +165,7 @@ public class ChartView extends View {
             if (!line.isVisible()) continue;
             PointL[] points = line.getPoints();
             for (int i = 1; i < points.length; i++) {
-                float x = pointX(points[i].x) + translationX();
+                float x = pointX(points[i].x);
                 if (x > -getWidth() / 4 && x < getWidth() * 5 / 4) {
                     if (points[i].y > maxY) {
                         maxY = points[i].y;
@@ -186,7 +181,7 @@ public class ChartView extends View {
     }
 
     private float pointX(long x) {
-        return (x - mGraph.minX()) * scaleX();
+        return (x - mGraph.minX()) * scaleX() + translationX();
     }
 
     private float pointY(long y) {

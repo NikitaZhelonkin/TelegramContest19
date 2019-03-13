@@ -22,8 +22,6 @@ public class RangeSeekBar extends View {
         void onRangeChanged(float minValue, float maxValue, boolean fromUser);
     }
 
-    private static final int INVALID_POINTER_ID = 255;
-
     private OnRangeSeekBarChangeListener mOnRangeSeekBarChangeListener;
 
     private float mMinValue;
@@ -47,8 +45,6 @@ public class RangeSeekBar extends View {
 
     private float mTouchDownX;
     private float mLastX;
-
-    private int mActivePointerId = INVALID_POINTER_ID;
 
     private DragMode mDragMode;
 
@@ -130,8 +126,7 @@ public class RangeSeekBar extends View {
     }
 
     private void trackTouchEvent(MotionEvent event) {
-        final int pointerIndex = event.findPointerIndex(mActivePointerId);
-        final float x = event.getX(pointerIndex);
+        final float x = event.getX();
         final float dx = x - mLastX;
         if (DragMode.LEFT.equals(mDragMode)) {
             setLeftValue(coordToValue(valueToCoord(mLeftValue) + dx));
@@ -265,8 +260,7 @@ public class RangeSeekBar extends View {
         switch (action & MotionEvent.ACTION_MASK) {
 
             case MotionEvent.ACTION_DOWN:
-                mActivePointerId = event.getPointerId(event.getPointerCount() - 1);
-                mTouchDownX = event.getX(event.getPointerCount() - 1);
+                mTouchDownX = event.getX();
                 mLastX = mTouchDownX;
                 mDragMode = evalDragMode(mTouchDownX);
                 break;
@@ -275,7 +269,7 @@ public class RangeSeekBar extends View {
                     if (mIsDragging) {
                         trackTouchEvent(event);
                     } else {
-                        final float x = event.getX(event.findPointerIndex(mActivePointerId));
+                        final float x = event.getX();
                         if (Math.abs(x - mTouchDownX) > mScaledTouchSlop) {
                             mLastX = x;
                             startDrag(event);
