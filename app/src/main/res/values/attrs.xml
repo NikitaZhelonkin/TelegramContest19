@@ -4,6 +4,9 @@
 
     <attr name="colorSurface" format="color"/>
     <attr name="colorDivider" format="color"/>
+    <attr name="colorGrid" format="color"/>
+
+    <attr name="popupStyle" format="reference"/>
 
     <attr name="rangeSeekBarStyle" format="reference"/>
 
@@ -21,6 +24,9 @@
     </declare-styleable>
 
     <declare-styleable name="ChartView">
-        <attr name="strokeWidth" format="dimension"/>
+        <attr name="lineWidth" format="dimension"/>
+        <attr name="previewMode" format="boolean"/>
+        <attr name="gridColor" format="color"/>
+        <attr name="surfaceColor" format="color"/>
     </declare-styleable>
 </resources>

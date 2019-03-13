@@ -5,6 +5,7 @@
     <color name="colorAccent">#3896d4</color>
     <color name="colorBackground">#F0F0F0</color>
     <color name="colorSurface">#FFFFFF</color>
+    <color name="colorGrid">#e5ebef</color>
 
     <color name="seekBarBackgroundColor">#ccf3f6f8</color>
     <color name="seekBarThumbColor">#303f81b0</color>
@@ -16,6 +17,7 @@
     <color name="colorAccentNight">#7bc4fb</color>
     <color name="colorBackgroundNight">#151e27</color>
     <color name="colorSurfaceNight">#1d2733</color>
+    <color name="colorGridNight">#131c26</color>
 
     <color name="seekBarBackgroundColorNight">#9916202b</color>
     <color name="seekBarThumbColorNight">#3064b7f0</color>

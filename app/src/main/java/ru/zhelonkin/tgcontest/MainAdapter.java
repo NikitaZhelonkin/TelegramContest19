@@ -61,6 +61,7 @@ public class MainAdapter extends DynamicViewDelegate.Adapter<MainAdapter.ViewHol
             CompoundButtonCompat.setButtonTintList(mCheckBox, ColorStateList.valueOf(line.getColor()));
             mCheckBox.setOnCheckedChangeListener(null);
             mCheckBox.setChecked(line.isVisible());
+            mCheckBox.jumpDrawablesToCurrentState();
             mCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 line.setVisible(isChecked);
                 if (mOnCheckChangedListener != null) {

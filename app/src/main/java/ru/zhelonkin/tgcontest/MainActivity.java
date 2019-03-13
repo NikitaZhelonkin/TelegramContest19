@@ -27,7 +27,6 @@ public class MainActivity extends AppCompatActivity implements
 
     private MainAdapter mMainAdapter;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(Prefs.isDarkMode(this) ? R.style.AppTheme_Night : R.style.AppTheme);
@@ -41,7 +40,11 @@ public class MainActivity extends AppCompatActivity implements
         linesLayout.setAdapter(mMainAdapter = new MainAdapter());
         mMainAdapter.setOnCheckChangedListener(this);
 
-        loadData();
+        if (savedInstanceState == null) {
+            loadData();
+        } else {
+           mChartView.post(() -> onSuccess(HolderFragment.holderFragmentFor(MainActivity.this).getChartData())) ;
+        }
     }
 
     @Override
@@ -65,12 +68,14 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onSuccess(ChartData chartData) {
+        HolderFragment.holderFragmentFor(this).setChartData(chartData);
         Graph graph = chartData.getGraphs().get(0);
         mChartView.setGraph(graph);
         mChartPreview.setGraph(graph);
         mMainAdapter.setGraph(graph);
         invalidateChartRange();
     }
+
 
     @Override
     public void onError(Throwable t) {

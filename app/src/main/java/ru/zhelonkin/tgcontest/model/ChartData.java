@@ -4,7 +4,7 @@ import java.util.List;
 
 public class ChartData {
 
-    List<Graph> mGraphs;
+    private List<Graph> mGraphs;
 
     public ChartData(List<Graph> graphs) {
         mGraphs = graphs;
