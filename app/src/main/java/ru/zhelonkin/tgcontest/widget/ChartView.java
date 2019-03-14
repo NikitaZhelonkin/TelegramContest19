@@ -9,7 +9,6 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,6 +17,7 @@ import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,13 +47,20 @@ public class ChartView extends View {
     private Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint mGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+    private int mSurfaceColor;
+
     private ChartPopup mChartPopup;
 
     private boolean mIsPreviewMode;
 
     private long mTargetX = INVALID_TARGET;
 
-    private int mSurfaceColor;
+    private boolean mIsDragging;
+
+    private float mTouchDownX;
+
+    private int mScaledTouchSlop;
+
 
     public ChartView(Context context) {
         super(context);
@@ -91,6 +98,8 @@ public class ChartView extends View {
 
         mGridPaint.setStrokeWidth(lineWidth / 2f);
         mGridPaint.setColor(gridColor);
+
+        mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
 
     public void setGraph(@NonNull Graph graph) {
@@ -173,17 +182,32 @@ public class ChartView extends View {
 
         switch (action & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
+                mTouchDownX = event.getX();
             case MotionEvent.ACTION_MOVE:
-                setTarget(findTargetX(Math.round(event.getX())));
+                final float x = event.getX();
+                if(!mIsDragging){
+                    if (Math.abs(x - mTouchDownX) > mScaledTouchSlop) {
+                        mIsDragging = true;
+                        attemptClaimDrag();
+                    }
+                }
+                setTarget(findTargetX(Math.round(x)));
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                mIsDragging = false;
                 setTarget(INVALID_TARGET);
                 break;
         }
 
         return true;
 
+    }
+
+    private void attemptClaimDrag() {
+        if (getParent() != null) {
+            getParent().requestDisallowInterceptTouchEvent(true);
+        }
     }
 
     private void setTarget(long target) {
@@ -234,15 +258,22 @@ public class ChartView extends View {
         mLinePaint.setAlpha((int) (255 * line.getAlpha()));
 
         PointL[] points = line.getPoints();
+        float[] lineBuffer = new float[points.length * 4];
         float lastX = pointX(points[0].x);
         float lastY = pointY(points[0].y);
-        for (int i = 1; i < points.length; i++) {
+        int j = 0;
+        for (int i = 0; i < points.length; i++) {
             float x = pointX(points[i].x);
             float y = pointY(points[i].y);
-            canvas.drawLine(lastX, lastY, x, y, mLinePaint);
+            lineBuffer[j++] = lastX;
+            lineBuffer[j++] = lastY;
+            lineBuffer[j++] = x;
+            lineBuffer[j++] = y;
             lastX = x;
             lastY = y;
         }
+
+        canvas.drawLines(lineBuffer, mLinePaint);
     }
 
     private void drawDots(Canvas canvas, Line line) {

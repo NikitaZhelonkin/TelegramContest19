@@ -79,10 +79,10 @@ class ChartPopup {
 
     private static class DateFormatter {
 
-        private static final String DATE_FORMAT = "MMM dd";
+        private static final String DATE_FORMAT = "E, MMM dd";
 
         String format(long date) {
-            return capitalize(new SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(date));
+            return capitalize(new SimpleDateFormat(DATE_FORMAT, Locale.US).format(date));
         }
         private static String capitalize(String string) {
             return string.substring(0, 1).toUpperCase() + string.substring(1);
