@@ -1,6 +1,5 @@
 package ru.zhelonkin.tgcontest;
 
-import android.support.annotation.RestrictTo;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -25,12 +24,10 @@ public class HolderFragment extends Fragment {
         return mChartData;
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static HolderFragment holderFragmentFor(FragmentActivity activity) {
         return holderFragmentFor(activity.getSupportFragmentManager());
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static HolderFragment holderFragmentFor(Fragment parentFragment) {
         return holderFragmentFor(parentFragment.getChildFragmentManager());
     }
@@ -52,7 +49,7 @@ public class HolderFragment extends Fragment {
 
     private static HolderFragment findHolderFragment(FragmentManager manager) {
         if (manager.isDestroyed()) {
-            throw new IllegalStateException("Can't access Presenters from onDestroy");
+            throw new IllegalStateException("Can't access data from onDestroy");
         }
 
         Fragment fragmentByTag = manager.findFragmentByTag(HOLDER_TAG);

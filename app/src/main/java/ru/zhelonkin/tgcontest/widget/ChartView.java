@@ -3,6 +3,7 @@ package ru.zhelonkin.tgcontest.widget;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -33,14 +34,15 @@ public class ChartView extends View {
 
     private Graph mGraph;
 
-    private float mChartScaleX = 1;
-    private float mChartScaleY = 1;
-
     private float mChartLeft = 0;
+    private float mChartRight = 1;
+    private float mChartTop = 1;
+    private float mChartBottom = 0;
 
-    private float mTargetChartScaleY = mChartScaleY;
+    private float mTargetChartTop = mChartTop;
+    private float mTargetChartBottom = mChartBottom;
 
-    private ObjectAnimator mScaleYAnimator;
+    private ObjectAnimator mChartTopBotAnimator;
 
     private AnimatorSet mLineAlphaAnimator;
 
@@ -60,7 +62,6 @@ public class ChartView extends View {
     private float mTouchDownX;
 
     private int mScaledTouchSlop;
-
 
     public ChartView(Context context) {
         super(context);
@@ -104,12 +105,15 @@ public class ChartView extends View {
 
     public void setGraph(@NonNull Graph graph) {
         mGraph = graph;
-        setChartScaleY(calculateScaleY());
+        float[] range = calculateRangeY();
+        setChartTop(range[1]);
+        setChartBottom(range[0]);
         invalidate();
     }
 
     public void updateGraphLines() {
-        setChartScaleYSmooth(calculateScaleY());
+        float[] range = calculateRangeY();
+        setChartTopAndBottomSmooth(range[1], range[0]);
 
         if (mLineAlphaAnimator != null) mLineAlphaAnimator.cancel();
         List<Animator> animatorList = new ArrayList<>();
@@ -132,32 +136,44 @@ public class ChartView extends View {
         invalidate();
     }
 
-    public void setChartScaleYSmooth(float chartScaleY) {
-        if (mTargetChartScaleY != chartScaleY) {
-            mTargetChartScaleY = chartScaleY;
-            if (mScaleYAnimator != null) mScaleYAnimator.cancel();
-            mScaleYAnimator = ObjectAnimator.ofFloat(this, "chartScaleY", mTargetChartScaleY);
-            mScaleYAnimator.setInterpolator(new FastOutSlowInInterpolator());
-            mScaleYAnimator.setDuration(200);
-            mScaleYAnimator.start();
-        }
-    }
-
-    public void setChartScaleY(float chartScaleY) {
-        mChartScaleY = chartScaleY;
-        invalidate();
-    }
-
-    public float getChartScaleY() {
-        return mChartScaleY;
-    }
 
     public void setLeftAndRight(float left, float right) {
         mChartLeft = left;
-        mChartScaleX = (right - left);
-        setChartScaleYSmooth(calculateScaleY());
+        mChartRight = right;
+        float[] range = calculateRangeY();
+        setChartTopAndBottomSmooth(range[1], range[0]);
         invalidate();
+    }
 
+    public void setChartTopAndBottomSmooth(float top, float bot) {
+        if (mTargetChartTop != top || mTargetChartBottom != bot) {
+            mTargetChartTop = top;
+            mTargetChartBottom = bot;
+            if (mChartTopBotAnimator != null) mChartTopBotAnimator.cancel();
+            PropertyValuesHolder pvhTop = PropertyValuesHolder.ofFloat("chartTop", mTargetChartTop);
+            PropertyValuesHolder pvhBop = PropertyValuesHolder.ofFloat("chartBottom", mTargetChartBottom);
+            mChartTopBotAnimator = ObjectAnimator.ofPropertyValuesHolder(this, pvhTop, pvhBop);
+            mChartTopBotAnimator.addUpdateListener(animation -> invalidate());
+            mChartTopBotAnimator.setInterpolator(new FastOutSlowInInterpolator());
+            mChartTopBotAnimator.setDuration(200);
+            mChartTopBotAnimator.start();
+        }
+    }
+
+    public void setChartTop(float chartTop) {
+        mChartTop = chartTop;
+    }
+
+    public void setChartBottom(float chartBottom) {
+        mChartBottom = chartBottom;
+    }
+
+    public float getChartTop() {
+        return mChartTop;
+    }
+
+    public float getChartBottom() {
+        return mChartBottom;
     }
 
     @Override
@@ -167,7 +183,7 @@ public class ChartView extends View {
         if (mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
-            if (mTargetX != INVALID_TARGET) drawDots(canvas, line);
+            if (mTargetX != INVALID_TARGET && line.isVisible()) drawDots(canvas, line);
         }
 
     }
@@ -185,7 +201,7 @@ public class ChartView extends View {
                 mTouchDownX = event.getX();
             case MotionEvent.ACTION_MOVE:
                 final float x = event.getX();
-                if(!mIsDragging){
+                if (!mIsDragging) {
                     if (Math.abs(x - mTouchDownX) > mScaledTouchSlop) {
                         mIsDragging = true;
                         attemptClaimDrag();
@@ -262,7 +278,7 @@ public class ChartView extends View {
         float lastX = pointX(points[0].x);
         float lastY = pointY(points[0].y);
         int j = 0;
-        for (int i = 0; i < points.length; i++) {
+        for (int i = 1; i < points.length; i++) {
             float x = pointX(points[i].x);
             float y = pointY(points[i].y);
             lineBuffer[j++] = lastX;
@@ -278,7 +294,6 @@ public class ChartView extends View {
 
     private void drawDots(Canvas canvas, Line line) {
         mLinePaint.setColor(line.getColor());
-        mLinePaint.setAlpha((int) (255 * line.getAlpha()));
 
         PointL[] points = line.getPoints();
         for (int i = 1; i < points.length; i++) {
@@ -332,14 +347,15 @@ public class ChartView extends View {
         for (Line line : mGraph.getLines()) {
             if (!line.isVisible()) continue;
             for (PointL p : line.getPoints()) {
-                if (p.x == target) pointLList.add(new PointAndLine(p,line ));
+                if (p.x == target) pointLList.add(new PointAndLine(p, line));
             }
         }
         return pointLList;
     }
 
-    private float calculateScaleY() {
-        if (mGraph == null) return 1;
+    private float[] calculateRangeY() {
+        if (mGraph == null) return new float[]{0, 1};
+        float minY = Float.MAX_VALUE;
         float maxY = Float.MIN_VALUE;
         for (Line line : mGraph.getLines()) {
             if (!line.isVisible()) continue;
@@ -347,17 +363,19 @@ public class ChartView extends View {
             for (int i = 1; i < points.length; i++) {
                 float x = pointX(points[i].x);
                 if (x > -getWidth() / 4 && x < getWidth() * 5 / 4) {
+                    if (points[i].y < minY) {
+                        minY = points[i].y;
+                    }
                     if (points[i].y > maxY) {
                         maxY = points[i].y;
                     }
                 }
             }
         }
-        return maxY / mGraph.rangeY();
-    }
-
-    private float translationX() {
-        return -mGraph.rangeX() * scaleX() * mChartLeft;
+        float[] result = new float[2];
+        result[0] = minY == Float.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
+        result[1] = maxY == Float.MIN_VALUE ? 1 : (maxY - mGraph.minY()) / mGraph.rangeY();
+        return result;
     }
 
     private float pointX(long x) {
@@ -365,18 +383,34 @@ public class ChartView extends View {
     }
 
     private float pointY(long y) {
-        return getHeight() - (y - mGraph.minY()) * scaleY();
+        return getHeight() - (y - mGraph.minY()) * scaleY() + translationY();
+    }
+
+    private float translationX() {
+        return -mGraph.rangeX() * scaleX() * mChartLeft;
+    }
+
+    private float translationY() {
+        return mGraph.rangeY() * scaleY() * mChartBottom;
     }
 
     private float scaleX() {
-        return getWidth() / mGraph.rangeX() * 1 / mChartScaleX;
+        return getWidth() / mGraph.rangeX() * 1 / chartScaleX();
     }
 
     private float scaleY() {
-        return getHeight() / mGraph.rangeY() * 1 / mChartScaleY;
+        return getHeight() / mGraph.rangeY() * 1 / chartScaleY();
     }
 
-    class PointAndLine{
+    private float chartScaleX() {
+        return mChartRight - mChartLeft;
+    }
+
+    private float chartScaleY() {
+        return mChartTop - mChartBottom;
+    }
+
+    class PointAndLine {
         PointL point;
         Line line;
 
