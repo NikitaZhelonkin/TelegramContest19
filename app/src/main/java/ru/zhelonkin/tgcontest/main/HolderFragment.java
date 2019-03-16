@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest;
+package ru.zhelonkin.tgcontest.main;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;

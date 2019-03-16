@@ -46,6 +46,7 @@ public class ChartView extends View {
 
     private AnimatorSet mLineAlphaAnimator;
 
+
     private Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint mGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -105,15 +106,29 @@ public class ChartView extends View {
 
     public void setGraph(@NonNull Graph graph) {
         mGraph = graph;
+        fillAxis();
         float[] range = calculateRangeY();
-        setChartTop(range[1]);
-        setChartBottom(range[0]);
+        setChartTopAndBottom(range[1], range[0], false);
         invalidate();
+
     }
+
+    private void  fillAxis(){
+        int count = 60;
+        yAxis = new Y[count];
+        float diff = (mGraph.rangeY() / count);
+        for (int i = 0; i < count; i++) {
+            Y y = new Y();
+            y.alpha = 1;
+            y.value = (long)( mGraph.minY() + i * diff);
+            yAxis[i] = y;
+        }
+    }
+
 
     public void updateGraphLines() {
         float[] range = calculateRangeY();
-        setChartTopAndBottomSmooth(range[1], range[0]);
+        setChartTopAndBottom(range[1], range[0], true);
 
         if (mLineAlphaAnimator != null) mLineAlphaAnimator.cancel();
         List<Animator> animatorList = new ArrayList<>();
@@ -122,7 +137,7 @@ public class ChartView extends View {
                 ObjectAnimator animator = ObjectAnimator.ofFloat(line, "alpha", 1);
                 animator.addUpdateListener(animation -> invalidate());
                 animatorList.add(animator);
-            } else if (!line.isVisible() && line.getAlpha() == 1) {
+            } else if (!line.isVisible() && line.getAlpha() != 0) {
                 ObjectAnimator animator = ObjectAnimator.ofFloat(line, "alpha", 0);
                 animator.addUpdateListener(animation -> invalidate());
                 animatorList.add(animator);
@@ -137,26 +152,33 @@ public class ChartView extends View {
     }
 
 
-    public void setLeftAndRight(float left, float right) {
+    public void setLeftAndRight(float left, float right, boolean animate) {
         mChartLeft = left;
         mChartRight = right;
         float[] range = calculateRangeY();
-        setChartTopAndBottomSmooth(range[1], range[0]);
+        setChartTopAndBottom(range[1], range[0], animate);
         invalidate();
     }
 
-    public void setChartTopAndBottomSmooth(float top, float bot) {
-        if (mTargetChartTop != top || mTargetChartBottom != bot) {
-            mTargetChartTop = top;
-            mTargetChartBottom = bot;
-            if (mChartTopBotAnimator != null) mChartTopBotAnimator.cancel();
-            PropertyValuesHolder pvhTop = PropertyValuesHolder.ofFloat("chartTop", mTargetChartTop);
-            PropertyValuesHolder pvhBop = PropertyValuesHolder.ofFloat("chartBottom", mTargetChartBottom);
-            mChartTopBotAnimator = ObjectAnimator.ofPropertyValuesHolder(this, pvhTop, pvhBop);
-            mChartTopBotAnimator.addUpdateListener(animation -> invalidate());
-            mChartTopBotAnimator.setInterpolator(new FastOutSlowInInterpolator());
-            mChartTopBotAnimator.setDuration(200);
-            mChartTopBotAnimator.start();
+    public void setChartTopAndBottom(float top, float bot, boolean animate) {
+        if (animate) {
+            if (mTargetChartTop != top || mTargetChartBottom != bot) {
+                mTargetChartTop = top;
+                mTargetChartBottom = bot;
+                if (mChartTopBotAnimator != null) mChartTopBotAnimator.cancel();
+                PropertyValuesHolder pvhTop = PropertyValuesHolder.ofFloat("chartTop", mTargetChartTop);
+                PropertyValuesHolder pvhBop = PropertyValuesHolder.ofFloat("chartBottom", mTargetChartBottom);
+                mChartTopBotAnimator = ObjectAnimator.ofPropertyValuesHolder(this, pvhTop, pvhBop);
+                mChartTopBotAnimator.addUpdateListener(animation -> {
+                    invalidate();
+                });
+                mChartTopBotAnimator.setInterpolator(new FastOutSlowInInterpolator());
+                mChartTopBotAnimator.setDuration(200);
+                mChartTopBotAnimator.start();
+            }
+        } else {
+            setChartTop(top);
+            setChartBottom(bot);
         }
     }
 
@@ -180,12 +202,23 @@ public class ChartView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (mGraph == null) return;
+//        if (!mIsPreviewMode) drawGrid(canvas);
         if (mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
             if (mTargetX != INVALID_TARGET && line.isVisible()) drawDots(canvas, line);
         }
 
+    }
+
+
+    private void drawGrid(Canvas canvas) {
+        int d = (int) (1 + 10 * chartScaleY());
+        for (int i = 0; i < yAxis.length; i++) {
+            float y = pointY(yAxis[i].value);
+            canvas.drawLine(0, y, getWidth(), y, mGridPaint);
+        }
+        mGridPaint.setAlpha(255);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -419,6 +452,13 @@ public class ChartView extends View {
             this.line = line;
         }
     }
+
+    private class Y{
+        long value;
+        float alpha;
+    }
+
+    private Y[] yAxis;
 
 
 }

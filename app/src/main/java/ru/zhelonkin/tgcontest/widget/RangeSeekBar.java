@@ -88,9 +88,7 @@ public class RangeSeekBar extends View {
 
         setGap(gap);
 
-        setRightValue(rightValue);
-
-        setLeftValue(leftValue);
+        setValues(leftValue, rightValue);
     }
 
     public void setOnRangeSeekBarChangeListener(OnRangeSeekBarChangeListener onRangeSeekbarChangeListener) {
@@ -107,6 +105,12 @@ public class RangeSeekBar extends View {
 
     public float getGap() {
         return mGap;
+    }
+
+    public void setValues(float leftValue, float rightValue){
+        setLeftValue(leftValue);
+        setRightValue(rightValue);
+        notifyRangeChanged(false);
     }
 
     private void setLeftValue(float value) {
@@ -320,11 +324,7 @@ public class RangeSeekBar extends View {
     public void onRestoreInstanceState(Parcelable state) {
         SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
-
-        setLeftValue(ss.leftValue);
-        setRightValue(ss.rightValue);
-        notifyRangeChanged(false);
-
+        setValues(ss.leftValue, ss.rightValue);
     }
 
     static class SavedState extends BaseSavedState {

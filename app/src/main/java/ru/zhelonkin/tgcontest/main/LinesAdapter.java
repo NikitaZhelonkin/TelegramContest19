@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest;
+package ru.zhelonkin.tgcontest.main;
 
 import android.content.res.ColorStateList;
 import android.support.annotation.NonNull;
@@ -8,11 +8,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
 
-public class MainAdapter extends DynamicViewDelegate.Adapter<MainAdapter.ViewHolder> {
+public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewHolder> {
 
     public interface OnCheckChangedListener {
         void onCheckChanged(Line line, boolean checked);

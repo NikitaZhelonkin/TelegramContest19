@@ -106,7 +106,7 @@ class ChartPopup {
         @Override
         protected ViewHolder onCreateViewHolder(ViewGroup parent) {
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-            return new ViewHolder(inflater.inflate(R.layout.list_item_popup_value, parent, false));
+            return new ViewHolder(inflater.inflate(R.layout.item_popup_value, parent, false));
         }
 
         @Override

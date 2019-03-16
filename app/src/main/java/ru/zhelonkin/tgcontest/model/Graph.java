@@ -1,6 +1,7 @@
 package ru.zhelonkin.tgcontest.model;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.util.List;
 
@@ -12,6 +13,9 @@ public class Graph {
     private long mMaxX;
     private long mMinY;
     private long mMaxY;
+
+    public float left = 0.7f;
+    public float right = 1f;
 
     public Graph(@NonNull List<Line> lines) {
         mLines = lines;
@@ -81,6 +85,5 @@ public class Graph {
         }
         return minY;
     }
-
 
 }
