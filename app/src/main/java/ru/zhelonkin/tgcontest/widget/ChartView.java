@@ -73,6 +73,8 @@ public class ChartView extends View {
 
     private int mScaledTouchSlop;
 
+    private float mTextPadding;
+
     public ChartView(Context context) {
         super(context);
         init(context, null);
@@ -101,6 +103,7 @@ public class ChartView extends View {
         int gridColor = a.getColor(R.styleable.ChartView_gridColor, Color.BLACK);
         mSurfaceColor = a.getColor(R.styleable.ChartView_surfaceColor, Color.WHITE);
         mIsPreviewMode = a.getBoolean(R.styleable.ChartView_previewMode, false);
+        mTextPadding = a.getDimensionPixelSize(R.styleable.ChartView_textPadding, 0);
 
         int textAppearance = a.getResourceId(R.styleable.ChartView_textAppearance, -1);
         a.recycle();
@@ -210,13 +213,14 @@ public class ChartView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (mGraph == null) return;
-        if (!mIsPreviewMode) drawYAxis(canvas);
         if (!mIsPreviewMode) drawXAxis(canvas);
+        if (!mIsPreviewMode) drawYAxis(canvas);
         if (!mIsPreviewMode && mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
             if (mTargetX != INVALID_TARGET && line.isVisible()) drawDots(canvas, line);
         }
+        if (!mIsPreviewMode) drawYAxisText(canvas);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -359,7 +363,20 @@ public class ChartView extends View {
             float y = pointY(value);
             if (y <= getHeight() - getPaddingBottom()) {
                 canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
-                canvas.drawText(String.valueOf(value), 0, y - 16, mTextPaint);
+            }
+        }
+    }
+
+    private void drawYAxisText(Canvas canvas) {
+        long rangeY = (long) (chartScaleY() * mGraph.rangeY());
+        long d = findD(rangeY);
+        int count = (int) (mGraph.rangeY() / d);
+        for (long i = 0; i < count + 1; i++) {
+            long value = mGraph.minY() + i * d;
+            float y = pointY(value) - mTextPadding;
+            float textHeight = mTextPaint.descent() - mTextPaint.ascent();
+            if (y >= textHeight && y <= getHeight() - getPaddingBottom()) {
+                canvas.drawText(String.valueOf(value), 0, y, mTextPaint);
             }
         }
     }
@@ -378,7 +395,7 @@ public class ChartView extends View {
     }
 
     private long findD(long range) {
-        int[] steps = new int[]{5, 10, 25, 50, 100, 125, 200, 250, 400};
+        int[] steps = new int[]{5, 10, 25, 50, 100, 200, 250, 500};
         int degree = 0;
         long temp = range;
         while (temp > 500) {
@@ -447,7 +464,7 @@ public class ChartView extends View {
             }
         }
         float[] result = new float[2];
-        result[0] = 0;//minY == Long.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
+        result[0] = minY == Long.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
         result[1] = maxY == Long.MIN_VALUE ? 1 : (maxY - mGraph.minY()) / mGraph.rangeY();
         return result;
     }

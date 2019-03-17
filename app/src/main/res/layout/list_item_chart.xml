@@ -36,6 +36,7 @@
         app:lineWidth="2dp"
         android:paddingBottom="26dp"
         android:paddingTop="2dp"
+        app:textPadding="5dp"
         app:textAppearance="?textAppearanceChart"
         app:surfaceColor="?colorSurface" />
 
