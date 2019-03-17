@@ -378,7 +378,7 @@ public class ChartView extends View {
     }
 
     private long findD(long range) {
-        int[] steps = new int[]{5, 10, 25, 50, 100, 125, 200, 250};
+        int[] steps = new int[]{5, 10, 25, 50, 100, 125, 200, 250, 400};
         int degree = 0;
         long temp = range;
         while (temp > 500) {
