@@ -15,13 +15,17 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Graph;
@@ -29,6 +33,10 @@ import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.model.PointL;
 
 public class ChartView extends View {
+
+    private static final long DAY = TimeUnit.DAYS.toMillis(1);
+
+    private static final DateFormatter DATE_FORMATTER = new DateFormatter();
 
     private static final long INVALID_TARGET = -1L;
 
@@ -49,6 +57,7 @@ public class ChartView extends View {
 
     private Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint mGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private TextPaint mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
     private int mSurfaceColor;
 
@@ -85,12 +94,15 @@ public class ChartView extends View {
         init(context, attrs);
     }
 
+    @SuppressLint("ResourceType")
     private void init(Context context, AttributeSet attrs) {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.ChartView);
         int lineWidth = a.getDimensionPixelSize(R.styleable.ChartView_lineWidth, 1);
         int gridColor = a.getColor(R.styleable.ChartView_gridColor, Color.BLACK);
         mSurfaceColor = a.getColor(R.styleable.ChartView_surfaceColor, Color.WHITE);
         mIsPreviewMode = a.getBoolean(R.styleable.ChartView_previewMode, false);
+
+        int textAppearance = a.getResourceId(R.styleable.ChartView_textAppearance, -1);
         a.recycle();
 
         mLinePaint.setStrokeWidth(lineWidth);
@@ -101,30 +113,23 @@ public class ChartView extends View {
         mGridPaint.setStrokeWidth(lineWidth / 2f);
         mGridPaint.setColor(gridColor);
 
+        if (textAppearance != -1) {
+            a = context.obtainStyledAttributes(textAppearance, new int[]{android.R.attr.textSize, android.R.attr.textColor});
+            mTextPaint.setTextSize(a.getDimensionPixelSize(0, 12));
+            mTextPaint.setColor(a.getColor(1, Color.BLACK));
+            a.recycle();
+        }
+
         mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
 
     public void setGraph(@NonNull Graph graph) {
         mGraph = graph;
-        fillAxis();
         float[] range = calculateRangeY();
         setChartTopAndBottom(range[1], range[0], false);
         invalidate();
 
     }
-
-    private void  fillAxis(){
-        int count = 60;
-        yAxis = new Y[count];
-        float diff = (mGraph.rangeY() / count);
-        for (int i = 0; i < count; i++) {
-            Y y = new Y();
-            y.alpha = 1;
-            y.value = (long)( mGraph.minY() + i * diff);
-            yAxis[i] = y;
-        }
-    }
-
 
     public void updateGraphLines() {
         float[] range = calculateRangeY();
@@ -146,7 +151,7 @@ public class ChartView extends View {
         mLineAlphaAnimator = new AnimatorSet();
         mLineAlphaAnimator.playTogether(animatorList);
         mLineAlphaAnimator.setInterpolator(new FastOutSlowInInterpolator());
-        mLineAlphaAnimator.setDuration(200);
+        mLineAlphaAnimator.setDuration(250);
         mLineAlphaAnimator.start();
         invalidate();
     }
@@ -173,12 +178,15 @@ public class ChartView extends View {
                     invalidate();
                 });
                 mChartTopBotAnimator.setInterpolator(new FastOutSlowInInterpolator());
-                mChartTopBotAnimator.setDuration(200);
+                mChartTopBotAnimator.setDuration(250);
                 mChartTopBotAnimator.start();
             }
         } else {
+            mTargetChartTop = top;
+            mTargetChartBottom = bot;
             setChartTop(top);
             setChartBottom(bot);
+            invalidate();
         }
     }
 
@@ -202,23 +210,13 @@ public class ChartView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (mGraph == null) return;
-//        if (!mIsPreviewMode) drawGrid(canvas);
-        if (mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
+        if (!mIsPreviewMode) drawYAxis(canvas);
+        if (!mIsPreviewMode) drawXAxis(canvas);
+        if (!mIsPreviewMode && mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
             if (mTargetX != INVALID_TARGET && line.isVisible()) drawDots(canvas, line);
         }
-
-    }
-
-
-    private void drawGrid(Canvas canvas) {
-        int d = (int) (1 + 10 * chartScaleY());
-        for (int i = 0; i < yAxis.length; i++) {
-            float y = pointY(yAxis[i].value);
-            canvas.drawLine(0, y, getWidth(), y, mGridPaint);
-        }
-        mGridPaint.setAlpha(255);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -339,7 +337,7 @@ public class ChartView extends View {
     }
 
     private void drawX(Canvas canvas, float x) {
-        canvas.drawLine(x, 0, x, getHeight(), mGridPaint);
+        canvas.drawLine(x, getPaddingTop(), x, getHeight() - getPaddingBottom(), mGridPaint);
     }
 
     private void drawDot(Canvas canvas, float x, float y) {
@@ -350,6 +348,49 @@ public class ChartView extends View {
         mLinePaint.setColor(color);
         mLinePaint.setStyle(Paint.Style.STROKE);
         canvas.drawCircle(x, y, mLinePaint.getStrokeWidth() * 2, mLinePaint);
+    }
+
+    private void drawYAxis(Canvas canvas) {
+        long rangeY = (long) (chartScaleY() * mGraph.rangeY());
+        long d = findD(rangeY);
+        int count = (int) (mGraph.rangeY() / d);
+        for (long i = 0; i < count + 1; i++) {
+            long value = mGraph.minY() + i * d;
+            float y = pointY(value);
+            if (y <= getHeight() - getPaddingBottom()) {
+                canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
+                canvas.drawText(String.valueOf(value), 0, y - 16, mTextPaint);
+            }
+        }
+    }
+
+    private void drawXAxis(Canvas canvas) {
+        long rangeY = (long) (chartScaleX() * (long)mGraph.rangeX());
+        long rangeInDays = rangeY / DAY;
+        long d = findD(rangeInDays);
+        long allRangeInDays = (long) (mGraph.rangeX() / DAY);
+        int count = (int) (allRangeInDays / d);
+        for (long i = 0; i < count + 1; i++) {
+            long value = mGraph.minX() + i * d * DAY;
+            float x = pointX(value);
+            canvas.drawText(DATE_FORMATTER.format(value), x, getHeight()-mTextPaint.descent(), mTextPaint);
+        }
+    }
+
+    private long findD(long range) {
+        int[] steps = new int[]{5, 10, 25, 50, 100, 125, 200, 250};
+        int degree = 0;
+        long temp = range;
+        while (temp > 500) {
+            temp /= 10;
+            degree++;
+        }
+        for (int step : steps) {
+            if (temp < step) {
+                return (int) (step / 5 * Math.pow(10, degree));
+            }
+        }
+        return (long) (steps[steps.length - 1] / 5 * Math.pow(10, degree));
     }
 
     private Long findTargetX(float touchX) {
@@ -388,35 +429,35 @@ public class ChartView extends View {
 
     private float[] calculateRangeY() {
         if (mGraph == null) return new float[]{0, 1};
-        float minY = Float.MAX_VALUE;
-        float maxY = Float.MIN_VALUE;
+        long minY = Long.MAX_VALUE;
+        long maxY = Long.MIN_VALUE;
         for (Line line : mGraph.getLines()) {
             if (!line.isVisible()) continue;
             PointL[] points = line.getPoints();
-            for (int i = 1; i < points.length; i++) {
-                float x = pointX(points[i].x);
-                if (x > -getWidth() / 4 && x < getWidth() * 5 / 4) {
-                    if (points[i].y < minY) {
-                        minY = points[i].y;
+            for (PointL point : points) {
+                float x = pointX(point.x);
+                if (x >= 0 && x <= getWidth()) {
+                    if (point.y < minY) {
+                        minY = point.y;
                     }
-                    if (points[i].y > maxY) {
-                        maxY = points[i].y;
+                    if (point.y > maxY) {
+                        maxY = point.y;
                     }
                 }
             }
         }
         float[] result = new float[2];
-        result[0] = minY == Float.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
-        result[1] = maxY == Float.MIN_VALUE ? 1 : (maxY - mGraph.minY()) / mGraph.rangeY();
+        result[0] = 0;//minY == Long.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
+        result[1] = maxY == Long.MIN_VALUE ? 1 : (maxY - mGraph.minY()) / mGraph.rangeY();
         return result;
     }
 
     private float pointX(long x) {
-        return (x - mGraph.minX()) * scaleX() + translationX();
+        return getPaddingLeft() + (x - mGraph.minX()) * scaleX() + translationX();
     }
 
     private float pointY(long y) {
-        return getHeight() - (y - mGraph.minY()) * scaleY() + translationY();
+        return getHeight() - getPaddingBottom() - (y - mGraph.minY()) * scaleY() + translationY();
     }
 
     private float translationX() {
@@ -428,11 +469,11 @@ public class ChartView extends View {
     }
 
     private float scaleX() {
-        return getWidth() / mGraph.rangeX() * 1 / chartScaleX();
+        return chartWidth() / mGraph.rangeX() * 1 / chartScaleX();
     }
 
     private float scaleY() {
-        return getHeight() / mGraph.rangeY() * 1 / chartScaleY();
+        return chartHeight() / mGraph.rangeY() * 1 / chartScaleY();
     }
 
     private float chartScaleX() {
@@ -453,12 +494,26 @@ public class ChartView extends View {
         }
     }
 
-    private class Y{
-        long value;
-        float alpha;
+    private int chartWidth() {
+        return getWidth() - getPaddingLeft() - getPaddingRight();
     }
 
-    private Y[] yAxis;
+    private int chartHeight() {
+        return getHeight() - getPaddingTop() - getPaddingBottom();
+    }
+
+    private static class DateFormatter {
+
+        private static final String DATE_FORMAT = "MMM dd";
+
+        String format(long date) {
+            return capitalize(new SimpleDateFormat(DATE_FORMAT, Locale.US).format(date));
+        }
+
+        private static String capitalize(String string) {
+            return string.substring(0, 1).toUpperCase() + string.substring(1);
+        }
+    }
 
 
 }
