@@ -15,7 +15,7 @@
         android:layout_marginLeft="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginRight="16dp"
-        android:text="@string/followers"
+        android:text="@string/chart_title"
         android:textColor="?colorAccent"
         android:textStyle="bold"
         app:layout_constraintLeft_toLeftOf="parent"

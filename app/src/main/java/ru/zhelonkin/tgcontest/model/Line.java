@@ -1,5 +1,7 @@
 package ru.zhelonkin.tgcontest.model;
 
+import android.support.annotation.Keep;
+
 import java.util.Arrays;
 
 public class Line {
@@ -19,10 +21,12 @@ public class Line {
         mAlpha = 1f;
     }
 
+    @Keep
     public void setAlpha(float alpha) {
         mAlpha = alpha;
     }
 
+    @Keep
     public float getAlpha() {
         return mAlpha;
     }

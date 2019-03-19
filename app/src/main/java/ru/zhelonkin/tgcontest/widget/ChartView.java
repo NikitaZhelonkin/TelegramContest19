@@ -11,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Build;
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -193,18 +194,22 @@ public class ChartView extends View {
         }
     }
 
+    @Keep
     public void setChartTop(float chartTop) {
         mChartTop = chartTop;
     }
 
+    @Keep
     public void setChartBottom(float chartBottom) {
         mChartBottom = chartBottom;
     }
 
+    @Keep
     public float getChartTop() {
         return mChartTop;
     }
 
+    @Keep
     public float getChartBottom() {
         return mChartBottom;
     }
@@ -356,26 +361,30 @@ public class ChartView extends View {
 
     private void drawYAxis(Canvas canvas) {
         long rangeY = (long) (chartScaleY() * mGraph.rangeY());
-        long d = findD(rangeY);
+        long d = gridSizeForRange(rangeY);
         int count = (int) (mGraph.rangeY() / d);
-        for (long i = 0; i < count + 1; i++) {
+        for (long i = count; i > 0; i--) {
             long value = mGraph.minY() + i * d;
             float y = pointY(value);
-            if (y <= getHeight() - getPaddingBottom()) {
-                canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
+            if (y > getHeight() - getPaddingBottom()) {
+                break;
             }
+            canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
         }
     }
 
     private void drawYAxisText(Canvas canvas) {
         long rangeY = (long) (chartScaleY() * mGraph.rangeY());
-        long d = findD(rangeY);
+        long d = gridSizeForRange(rangeY);
         int count = (int) (mGraph.rangeY() / d);
-        for (long i = 0; i < count + 1; i++) {
+        for (long i = count; i > 0; i--) {
             long value = mGraph.minY() + i * d;
             float y = pointY(value) - mTextPadding;
+            if (y > getHeight() - getPaddingBottom()) {
+                break;
+            }
             float textHeight = mTextPaint.descent() - mTextPaint.ascent();
-            if (y >= textHeight && y <= getHeight() - getPaddingBottom()) {
+            if (y >= textHeight) {
                 canvas.drawText(String.valueOf(value), 0, y, mTextPaint);
             }
         }
@@ -384,7 +393,7 @@ public class ChartView extends View {
     private void drawXAxis(Canvas canvas) {
         long rangeY = (long) (chartScaleX() * (long)mGraph.rangeX());
         long rangeInDays = rangeY / DAY;
-        long d = findD(rangeInDays);
+        long d = gridSizeForRange(rangeInDays);
         long allRangeInDays = (long) (mGraph.rangeX() / DAY);
         int count = (int) (allRangeInDays / d);
         for (long i = 0; i < count + 1; i++) {
@@ -394,7 +403,7 @@ public class ChartView extends View {
         }
     }
 
-    private long findD(long range) {
+    private long gridSizeForRange(long range) {
         int[] steps = new int[]{5, 10, 25, 50, 100, 200, 250, 500};
         int degree = 0;
         long temp = range;
@@ -404,7 +413,7 @@ public class ChartView extends View {
         }
         for (int step : steps) {
             if (temp < step) {
-                return (int) (step / 5 * Math.pow(10, degree));
+                return (long) (step / 5 * Math.pow(10, degree));
             }
         }
         return (long) (steps[steps.length - 1] / 5 * Math.pow(10, degree));
@@ -501,16 +510,6 @@ public class ChartView extends View {
         return mChartTop - mChartBottom;
     }
 
-    class PointAndLine {
-        PointL point;
-        Line line;
-
-        PointAndLine(PointL point, Line line) {
-            this.point = point;
-            this.line = line;
-        }
-    }
-
     private int chartWidth() {
         return getWidth() - getPaddingLeft() - getPaddingRight();
     }
@@ -532,5 +531,14 @@ public class ChartView extends View {
         }
     }
 
+    class PointAndLine {
+        PointL point;
+        Line line;
+
+        PointAndLine(PointL point, Line line) {
+            this.point = point;
+            this.line = line;
+        }
+    }
 
 }

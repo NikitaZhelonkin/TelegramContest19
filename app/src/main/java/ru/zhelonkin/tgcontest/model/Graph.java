@@ -21,7 +21,7 @@ public class Graph {
         mLines = lines;
         mMinX = calcMinX();
         mMaxX = calcMaxX();
-        mMinY = calcMinY();
+        mMinY = 0;//calcMinY();
         mMaxY = calcMaxY();
     }
 

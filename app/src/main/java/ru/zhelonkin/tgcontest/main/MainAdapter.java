@@ -2,10 +2,10 @@ package ru.zhelonkin.tgcontest.main;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.ViewUtils;
@@ -34,7 +34,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
 
     @Override
     public void onBindViewHolder(@NonNull ChartViewHolder chartViewHolder, int i) {
-        chartViewHolder.bindView(mChartData.getGraphs().get(i));
+        chartViewHolder.bindView(mChartData.getGraphs().get(i), i);
     }
 
     @Override
@@ -45,6 +45,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
     class ChartViewHolder extends RecyclerView.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
             LinesAdapter.OnCheckChangedListener {
 
+        private TextView titleView;
         private ChartView chartView;
         private ChartView chartPreview;
         private RangeSeekBar rangeSeekBar;
@@ -53,6 +54,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
 
         ChartViewHolder(@NonNull View itemView) {
             super(itemView);
+            titleView = itemView.findViewById(R.id.title);
             chartView = itemView.findViewById(R.id.chart_view);
             chartPreview = itemView.findViewById(R.id.chart_preview);
             rangeSeekBar = itemView.findViewById(R.id.rangeBar);
@@ -62,10 +64,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             linesAdapter.setOnCheckChangedListener(this);
         }
 
-        void bindView(Graph graph) {
+        void bindView(Graph graph, int position) {
             chartView.setGraph(graph);
             chartPreview.setGraph(graph);
             linesAdapter.setGraph(graph);
+            titleView.setText(itemView.getContext().getString(R.string.chart_title, position + 1));
 
             ViewUtils.onPreDraw(chartView, () -> {
                 rangeSeekBar.setValues(graph.left * 100, graph.right * 100);
