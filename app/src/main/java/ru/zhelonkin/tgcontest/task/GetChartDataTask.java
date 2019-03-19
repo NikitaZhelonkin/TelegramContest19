@@ -2,20 +2,23 @@ package ru.zhelonkin.tgcontest.task;
 
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
+import android.util.Log;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import org.json.JSONArray;
+import org.json.JSONException;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Result;
-import ru.zhelonkin.tgcontest.model.deserializer.GraphDeserializer;
+import ru.zhelonkin.tgcontest.model.deserializer.GraphParser;
 
 public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
 
@@ -40,23 +43,11 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
 
     @Override
     protected Result<ChartData> doInBackground(Void... voids) {
-        Reader reader = null;
         try {
-            reader = new InputStreamReader(mAssetManager.open("chart_data.json"));
-            Gson gson = new Gson().newBuilder().registerTypeAdapter(Graph.class, new GraphDeserializer()).create();
-            Type type = new TypeToken<List<Graph>>() {}.getType();
-            List<Graph> graphs = gson.fromJson(reader, type);
+            List<Graph> graphs = parseJSON(mAssetManager.open("chart_data.json"));
             return new Result<>(new ChartData(graphs));
-        } catch (IOException e) {
+        } catch (IOException | JSONException e) {
             return new Result<>(e);
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    //do nothing
-                }
-            }
         }
     }
 
@@ -70,5 +61,36 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
         }
     }
 
+
+    private List<Graph> parseJSON(InputStream is) throws IOException, JSONException {
+        GraphParser graphParser = new GraphParser();
+        JSONArray array = new JSONArray(readToString(is));
+        List<Graph> result = new ArrayList<>(array.length());
+        for (int i = 0; i < array.length(); i++) {
+            result.add(graphParser.parse(array.getJSONObject(i)));
+        }
+        return result;
+    }
+
+    private String readToString(InputStream is) throws IOException {
+        BufferedReader reader = null;
+        try{
+            reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder total = new StringBuilder();
+            for (String line; (line = reader.readLine()) != null; ) {
+                total.append(line).append('\n');
+            }
+            return total.toString();
+        }finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    //do nothing
+                }
+            }
+        }
+
+    }
 
 }

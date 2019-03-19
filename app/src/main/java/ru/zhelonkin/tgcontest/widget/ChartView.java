@@ -22,10 +22,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import ru.zhelonkin.tgcontest.R;
@@ -36,8 +34,6 @@ import ru.zhelonkin.tgcontest.model.PointL;
 public class ChartView extends View {
 
     private static final long DAY = TimeUnit.DAYS.toMillis(1);
-
-    private static final DateFormatter DATE_FORMATTER = new DateFormatter();
 
     private static final long INVALID_TARGET = -1L;
 
@@ -132,8 +128,8 @@ public class ChartView extends View {
         float[] range = calculateRangeY();
         setChartTopAndBottom(range[1], range[0], false);
         invalidate();
-
     }
+
 
     public void updateGraphLines() {
         float[] range = calculateRangeY();
@@ -166,6 +162,7 @@ public class ChartView extends View {
         mChartRight = right;
         float[] range = calculateRangeY();
         setChartTopAndBottom(range[1], range[0], animate);
+        updateXAxisVisibility(animate);
         invalidate();
     }
 
@@ -174,6 +171,7 @@ public class ChartView extends View {
             if (mTargetChartTop != top || mTargetChartBottom != bot) {
                 mTargetChartTop = top;
                 mTargetChartBottom = bot;
+                 updateYAxisVisibilityY(true);
                 if (mChartTopBotAnimator != null) mChartTopBotAnimator.cancel();
                 PropertyValuesHolder pvhTop = PropertyValuesHolder.ofFloat("chartTop", mTargetChartTop);
                 PropertyValuesHolder pvhBop = PropertyValuesHolder.ofFloat("chartBottom", mTargetChartBottom);
@@ -184,10 +182,12 @@ public class ChartView extends View {
                 mChartTopBotAnimator.setInterpolator(new FastOutSlowInInterpolator());
                 mChartTopBotAnimator.setDuration(250);
                 mChartTopBotAnimator.start();
+
             }
         } else {
             mTargetChartTop = top;
             mTargetChartBottom = bot;
+            updateYAxisVisibilityY(false);
             setChartTop(top);
             setChartBottom(bot);
             invalidate();
@@ -218,7 +218,6 @@ public class ChartView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (mGraph == null) return;
-        if (!mIsPreviewMode) drawXAxis(canvas);
         if (!mIsPreviewMode) drawYAxis(canvas);
         if (!mIsPreviewMode && mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
         for (Line line : mGraph.getLines()) {
@@ -226,6 +225,7 @@ public class ChartView extends View {
             if (mTargetX != INVALID_TARGET && line.isVisible()) drawDots(canvas, line);
         }
         if (!mIsPreviewMode) drawYAxisText(canvas);
+        if (!mIsPreviewMode) drawXAxis(canvas);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -360,63 +360,63 @@ public class ChartView extends View {
     }
 
     private void drawYAxis(Canvas canvas) {
-        long rangeY = (long) (chartScaleY() * mGraph.rangeY());
-        long d = gridSizeForRange(rangeY);
-        int count = (int) (mGraph.rangeY() / d);
-        for (long i = count; i > 0; i--) {
-            long value = mGraph.minY() + i * d;
-            float y = pointY(value);
-            if (y > getHeight() - getPaddingBottom()) {
-                break;
+        for (Graph.Value v : mGraph.getYXis()) {
+            float y = pointY(v.value);
+            if (v.getAlpha() != 0) {
+                mGridPaint.setAlpha(((int) (v.getAlpha() * 255)));
+                canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
             }
-            canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
+            mGridPaint.setAlpha(255);
         }
     }
 
     private void drawYAxisText(Canvas canvas) {
-        long rangeY = (long) (chartScaleY() * mGraph.rangeY());
-        long d = gridSizeForRange(rangeY);
-        int count = (int) (mGraph.rangeY() / d);
-        for (long i = count; i > 0; i--) {
-            long value = mGraph.minY() + i * d;
-            float y = pointY(value) - mTextPadding;
-            if (y > getHeight() - getPaddingBottom()) {
-                break;
-            }
-            float textHeight = mTextPaint.descent() - mTextPaint.ascent();
-            if (y >= textHeight) {
-                canvas.drawText(String.valueOf(value), 0, y, mTextPaint);
+        for (Graph.Value v : mGraph.getYXis()) {
+            float y = pointY(v.value)-mTextPadding;
+            if (v.getAlpha() != 0) {
+                mTextPaint.setAlpha(((int) (v.getAlpha() * 255)));
+                canvas.drawText(v.displayValue, 0, y, mTextPaint);
             }
         }
+        mTextPaint.setAlpha(255);
     }
+
+    private Paint mPaint = new Paint();
+
 
     private void drawXAxis(Canvas canvas) {
-        long rangeY = (long) (chartScaleX() * (long)mGraph.rangeX());
+        mPaint.setColor(mSurfaceColor);
+        canvas.drawRect(0, getHeight()-getPaddingBottom(), getWidth(), getHeight(), mPaint);
+        for (Graph.Value v : mGraph.getXAxis()) {
+            float x = pointX(v.value);
+            if (v.getAlpha() != 0) {
+                mTextPaint.setAlpha(((int) (v.getAlpha() * 255)));
+                canvas.drawText(v.displayValue, x, getHeight() - mTextPaint.descent(), mTextPaint);
+            }
+        }
+
+        mTextPaint.setAlpha(255);
+    }
+
+    private void updateXAxisVisibility(boolean animate) {
+        if (mGraph == null || mIsPreviewMode) return;
+        long rangeY = (long) (chartScaleX() * (long) mGraph.rangeX());
         long rangeInDays = rangeY / DAY;
-        long d = gridSizeForRange(rangeInDays);
-        long allRangeInDays = (long) (mGraph.rangeX() / DAY);
-        int count = (int) (allRangeInDays / d);
-        for (long i = 0; i < count + 1; i++) {
-            long value = mGraph.minX() + i * d * DAY;
-            float x = pointX(value);
-            canvas.drawText(DATE_FORMATTER.format(value), x, getHeight()-mTextPaint.descent(), mTextPaint);
+        long d = mGraph.gridSizeForRange(rangeInDays);
+        for (int i = 0; i < mGraph.getXAxis().length; i += 1) {
+            Graph.Value v = mGraph.getXAxis()[i];
+            v.setVisible(v.index % d == 0, animate, this::invalidate);
         }
     }
 
-    private long gridSizeForRange(long range) {
-        int[] steps = new int[]{5, 10, 25, 50, 100, 200, 250, 500};
-        int degree = 0;
-        long temp = range;
-        while (temp > 500) {
-            temp /= 10;
-            degree++;
+    private void updateYAxisVisibilityY(boolean animate) {
+        if (mGraph == null || mIsPreviewMode) return;
+        long rangeY = (long) ((mTargetChartTop-mTargetChartBottom) * mGraph.rangeY());
+        long d = mGraph.gridSizeForRange(rangeY);
+        for (int i = 0; i < mGraph.getYXis().length; i += 1) {
+            Graph.Value v = mGraph.getYXis()[i];
+            v.setVisible(v.index % d == 0, animate, this::invalidate);
         }
-        for (int step : steps) {
-            if (temp < step) {
-                return (long) (step / 5 * Math.pow(10, degree));
-            }
-        }
-        return (long) (steps[steps.length - 1] / 5 * Math.pow(10, degree));
     }
 
     private Long findTargetX(float touchX) {
@@ -473,7 +473,7 @@ public class ChartView extends View {
             }
         }
         float[] result = new float[2];
-        result[0] = minY == Long.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
+        result[0] = 0;//minY == Long.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
         result[1] = maxY == Long.MIN_VALUE ? 1 : (maxY - mGraph.minY()) / mGraph.rangeY();
         return result;
     }
@@ -516,19 +516,6 @@ public class ChartView extends View {
 
     private int chartHeight() {
         return getHeight() - getPaddingTop() - getPaddingBottom();
-    }
-
-    private static class DateFormatter {
-
-        private static final String DATE_FORMAT = "MMM dd";
-
-        String format(long date) {
-            return capitalize(new SimpleDateFormat(DATE_FORMAT, Locale.US).format(date));
-        }
-
-        private static String capitalize(String string) {
-            return string.substring(0, 1).toUpperCase() + string.substring(1);
-        }
     }
 
     class PointAndLine {
