@@ -23,9 +23,15 @@ import android.view.View;
 import android.view.ViewConfiguration;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
+import ru.zhelonkin.tgcontest.Alpha;
+import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
+import ru.zhelonkin.tgcontest.formatter.DateFormatter;
+import ru.zhelonkin.tgcontest.formatter.Formatter;
+import ru.zhelonkin.tgcontest.formatter.NumberFormatter;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Line;
@@ -33,11 +39,14 @@ import ru.zhelonkin.tgcontest.model.PointL;
 
 public class ChartView extends View {
 
-    private static final long DAY = TimeUnit.DAYS.toMillis(1);
+    private final Formatter DATE_FORMATTER = new CachingFormatter(new DateFormatter());
+    private final Formatter NUMBER_FORMATTER = new CachingFormatter(new NumberFormatter());
 
     private static final long INVALID_TARGET = -1L;
 
     private Graph mGraph;
+
+    private Axises mAxises;
 
     private float mChartLeft = 0;
     private float mChartRight = 1;
@@ -108,7 +117,6 @@ public class ChartView extends View {
         mLinePaint.setStrokeWidth(lineWidth);
         mLinePaint.setStyle(Paint.Style.STROKE);
         mLinePaint.setStrokeCap(Paint.Cap.ROUND);
-        mLinePaint.setStrokeJoin(Paint.Join.ROUND);
 
         mGridPaint.setStrokeWidth(lineWidth / 2f);
         mGridPaint.setColor(gridColor);
@@ -125,6 +133,7 @@ public class ChartView extends View {
 
     public void setGraph(@NonNull Graph graph) {
         mGraph = graph;
+        mAxises = new Axises();
         float[] range = calculateRangeY();
         setChartTopAndBottom(range[1], range[0], false);
         invalidate();
@@ -157,12 +166,12 @@ public class ChartView extends View {
     }
 
 
-    public void setLeftAndRight(float left, float right, boolean animate) {
+    public void setChartLeftAndRight(float left, float right, boolean animate) {
         mChartLeft = left;
         mChartRight = right;
         float[] range = calculateRangeY();
         setChartTopAndBottom(range[1], range[0], animate);
-        updateXAxisVisibility(animate);
+        mAxises.updateXGridSize(animate);
         invalidate();
     }
 
@@ -171,7 +180,7 @@ public class ChartView extends View {
             if (mTargetChartTop != top || mTargetChartBottom != bot) {
                 mTargetChartTop = top;
                 mTargetChartBottom = bot;
-                 updateYAxisVisibilityY(true);
+                mAxises.updateYGridSize(true);
                 if (mChartTopBotAnimator != null) mChartTopBotAnimator.cancel();
                 PropertyValuesHolder pvhTop = PropertyValuesHolder.ofFloat("chartTop", mTargetChartTop);
                 PropertyValuesHolder pvhBop = PropertyValuesHolder.ofFloat("chartBottom", mTargetChartBottom);
@@ -187,7 +196,7 @@ public class ChartView extends View {
         } else {
             mTargetChartTop = top;
             mTargetChartBottom = bot;
-            updateYAxisVisibilityY(false);
+            mAxises.updateYGridSize(false);
             setChartTop(top);
             setChartBottom(bot);
             invalidate();
@@ -285,7 +294,7 @@ public class ChartView extends View {
     private void showPopup(long target) {
         if (!isShowingPopup()) {
             mChartPopup = new ChartPopup(getContext());
-            mChartPopup.bindData(pointsAt(target));
+            mChartPopup.bindData(mGraph.pointsAt(target));
             mChartPopup.showAtLocation(this, (int) pointX(target), 0);
         }
     }
@@ -294,7 +303,7 @@ public class ChartView extends View {
         if (isShowingPopup()) {
             int[] location = new int[2];
             getLocationInWindow(location);
-            mChartPopup.bindData(pointsAt(target));
+            mChartPopup.bindData(mGraph.pointsAt(target));
             mChartPopup.update(this, (int) pointX(target), 0);
         }
     }
@@ -360,64 +369,48 @@ public class ChartView extends View {
     }
 
     private void drawYAxis(Canvas canvas) {
-        for (Graph.Value v : mGraph.getYXis()) {
+        int count = canvas.save();
+        canvas.clipRect(getPaddingLeft(), getPaddingTop(), getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
+        for (Long index : mAxises.mYValues.keySet()) {
+            Axises.Value v = mAxises.mYValues.get(index);
             float y = pointY(v.value);
             if (v.getAlpha() != 0) {
-                mGridPaint.setAlpha(((int) (v.getAlpha() * 255)));
+                mGridPaint.setAlpha(Alpha.toInt(v.getAlpha()));
                 canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
             }
-            mGridPaint.setAlpha(255);
+            mGridPaint.setAlpha(Alpha.toInt(1f));
         }
+        canvas.restoreToCount(count);
     }
 
     private void drawYAxisText(Canvas canvas) {
-        for (Graph.Value v : mGraph.getYXis()) {
-            float y = pointY(v.value)-mTextPadding;
+        int count = canvas.save();
+        canvas.clipRect(getPaddingLeft(), getPaddingTop(), getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
+        for (Long index : mAxises.mYValues.keySet()) {
+            Axises.Value v = mAxises.mYValues.get(index);
+            float y = pointY(v.value) - mTextPadding;
             if (v.getAlpha() != 0) {
-                mTextPaint.setAlpha(((int) (v.getAlpha() * 255)));
-                canvas.drawText(v.displayValue, 0, y, mTextPaint);
+                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha()));
+                canvas.drawText(NUMBER_FORMATTER.format(v.value), 0, y, mTextPaint);
             }
         }
-        mTextPaint.setAlpha(255);
+        mTextPaint.setAlpha(Alpha.toInt(1f));
+        canvas.restoreToCount(count);
     }
-
-    private Paint mPaint = new Paint();
-
 
     private void drawXAxis(Canvas canvas) {
-        mPaint.setColor(mSurfaceColor);
-        canvas.drawRect(0, getHeight()-getPaddingBottom(), getWidth(), getHeight(), mPaint);
-        for (Graph.Value v : mGraph.getXAxis()) {
+        for (Long index : mAxises.mXValues.keySet()) {
+            Axises.Value v = mAxises.mXValues.get(index);
             float x = pointX(v.value);
             if (v.getAlpha() != 0) {
-                mTextPaint.setAlpha(((int) (v.getAlpha() * 255)));
-                canvas.drawText(v.displayValue, x, getHeight() - mTextPaint.descent(), mTextPaint);
+                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha()));
+                canvas.drawText(DATE_FORMATTER.format(v.value), x, getHeight() - mTextPaint.descent(), mTextPaint);
             }
         }
-
-        mTextPaint.setAlpha(255);
+        mTextPaint.setAlpha(Alpha.toInt(1f));
     }
 
-    private void updateXAxisVisibility(boolean animate) {
-        if (mGraph == null || mIsPreviewMode) return;
-        long rangeY = (long) (chartScaleX() * (long) mGraph.rangeX());
-        long rangeInDays = rangeY / DAY;
-        long d = mGraph.gridSizeForRange(rangeInDays);
-        for (int i = 0; i < mGraph.getXAxis().length; i += 1) {
-            Graph.Value v = mGraph.getXAxis()[i];
-            v.setVisible(v.index % d == 0, animate, this::invalidate);
-        }
-    }
 
-    private void updateYAxisVisibilityY(boolean animate) {
-        if (mGraph == null || mIsPreviewMode) return;
-        long rangeY = (long) ((mTargetChartTop-mTargetChartBottom) * mGraph.rangeY());
-        long d = mGraph.gridSizeForRange(rangeY);
-        for (int i = 0; i < mGraph.getYXis().length; i += 1) {
-            Graph.Value v = mGraph.getYXis()[i];
-            v.setVisible(v.index % d == 0, animate, this::invalidate);
-        }
-    }
 
     private Long findTargetX(float touchX) {
         Line line = null;
@@ -440,17 +433,6 @@ public class ChartView extends View {
             return targetP != null ? targetP.x : INVALID_TARGET;
         }
         return INVALID_TARGET;
-    }
-
-    private List<PointAndLine> pointsAt(long target) {
-        List<PointAndLine> pointLList = new ArrayList<>();
-        for (Line line : mGraph.getLines()) {
-            if (!line.isVisible()) continue;
-            for (PointL p : line.getPoints()) {
-                if (p.x == target) pointLList.add(new PointAndLine(p, line));
-            }
-        }
-        return pointLList;
     }
 
     private float[] calculateRangeY() {
@@ -518,14 +500,147 @@ public class ChartView extends View {
         return getHeight() - getPaddingTop() - getPaddingBottom();
     }
 
-    class PointAndLine {
-        PointL point;
-        Line line;
 
-        PointAndLine(PointL point, Line line) {
-            this.point = point;
-            this.line = line;
+    private class Axises {
+
+        Map<Long, Value> mYValues = new HashMap<>();
+        Map<Long, Value> mXValues = new HashMap<>();
+
+        private long mXGridSize = -1;
+        private long mYGridSize = -1;
+
+        private void updateXGridSize(boolean animate) {
+            if (mGraph == null || mIsPreviewMode) return;
+            long rangeY = (long) (chartScaleX() * (long) mGraph.rangeX());
+            long gridSize = gridSizeForXRange(rangeY);
+            if (mXGridSize == gridSize) return;
+            mXGridSize = gridSize;
+            for (Long index : mXValues.keySet()) {
+                Value v = mXValues.get(index);
+                if (v != null) {
+                    v.setVisible((index - mGraph.minX()) % gridSize == 0, animate);
+                }
+            }
+            for (long i = mGraph.minX(); i < mGraph.maxX(); i += gridSize) {
+                if (!mXValues.containsKey(i)) {
+                    Value value = new Value(i);
+                    mXValues.put(value.value, value);
+                    value.setVisible(true, animate);
+                }
+            }
         }
+
+
+        private void updateYGridSize(boolean animate) {
+            if (mGraph == null || mIsPreviewMode) return;
+            long rangeY = (long) ((mTargetChartTop - mTargetChartBottom) * mGraph.rangeY());
+            long gridSize = gridSizeForYRange(rangeY);
+            if (mYGridSize == gridSize) return;
+            mYGridSize = gridSize;
+
+            for (Long index : mYValues.keySet()) {
+                Value v = mYValues.get(index);
+                if (v != null) {
+                    v.setVisible((index - mGraph.minY()) % gridSize == 0, animate);
+                }
+            }
+            for (long i = mGraph.minY(); i < mGraph.maxY(); i += gridSize) {
+                if (!mYValues.containsKey(i)) {
+                    Value value = new Value(i);
+                    mYValues.put(i, value);
+                    value.setVisible(true, animate);
+                }
+            }
+        }
+
+        public long gridSizeForYRange(long range) {
+            int[] steps = new int[]{5, 10, 25, 50, 100, 200, 250, 500};
+            int degree = 0;
+            long temp = range;
+            while (temp > 500) {
+                temp /= 10;
+                degree++;
+            }
+            for (int step : steps) {
+                if (temp <= step) {
+                    return (long) (step / 5 * Math.pow(10, degree));
+                }
+            }
+            return (long) (steps[steps.length - 1] / 5 * Math.pow(10, degree));
+        }
+
+        public long gridSizeForXRange(long range) {
+            return (long) Math.pow(2, Math.ceil(Math.log(range/6f)/Math.log(2)));
+        }
+
+
+        private class Value {
+
+            private long value;
+
+            private float alpha = 1;
+            private float targetAlpha = 1;
+
+            private ObjectAnimator animator;
+
+            Value(long value){
+                this.value = value;
+            }
+
+            @Keep
+            public void setAlpha(float alpha) {
+                this.alpha = alpha;
+            }
+
+            @Keep
+            public float getAlpha() {
+                return alpha;
+            }
+
+            void setVisible(boolean visible, boolean animate) {
+                if (!animate) {
+                    targetAlpha = visible ? 1 : 0;
+                    alpha = targetAlpha;
+                    invalidate();
+                    return;
+                }
+                if (visible && targetAlpha != 1) {
+                    targetAlpha = 1;
+                    if (animator != null) animator.cancel();
+                    animator = ObjectAnimator.ofFloat(this, "alpha", 1);
+                    animator.addUpdateListener(it -> {
+                       invalidate();
+                    });
+                    animator.setDuration(250);
+                    animator.start();
+                } else if (!visible && targetAlpha != 0) {
+                    targetAlpha = 0;
+                    if (animator != null) animator.cancel();
+                    animator = ObjectAnimator.ofFloat(this, "alpha", 0);
+                    animator.addUpdateListener(it -> {
+                        invalidate();
+                    });
+                    animator.setDuration(250);
+                    animator.start();
+                }
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+
+                Value value1 = (Value) o;
+
+                return this.value == value1.value;
+            }
+
+            @Override
+            public int hashCode() {
+                return (int) (value ^ (value >>> 32));
+            }
+        }
+
     }
 
 }

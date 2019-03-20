@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 
 import ru.zhelonkin.tgcontest.R;
+import ru.zhelonkin.tgcontest.model.Graph;
 
 class ChartPopup {
 
@@ -46,7 +47,7 @@ class ChartPopup {
         mPopupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    void bindData(List<ChartView.PointAndLine> points) {
+    void bindData(List<Graph.PointAndLine> points) {
         if (points.size() == 0) return;
         mXValueView.setText(new DateFormatter().format(points.get(0).point.x));
         mAdapter.setData(points);
@@ -91,9 +92,9 @@ class ChartPopup {
 
     private static class Adapter extends DynamicViewDelegate.Adapter<Adapter.ViewHolder> {
 
-        private List<ChartView.PointAndLine> mPointAndLines;
+        private List<Graph.PointAndLine> mPointAndLines;
 
-        void setData(List<ChartView.PointAndLine> pointAndLines) {
+        void setData(List<Graph.PointAndLine> pointAndLines) {
             mPointAndLines = pointAndLines;
             notifyDataChanged();
         }
@@ -111,7 +112,7 @@ class ChartPopup {
 
         @Override
         protected void onBindViewHolder(ViewHolder viewHolder, int position, Object payload) {
-            ChartView.PointAndLine pointAndLine = mPointAndLines.get(position);
+            Graph.PointAndLine pointAndLine = mPointAndLines.get(position);
             viewHolder.lineNameView.setTextColor(pointAndLine.line.getColor());
             viewHolder.lineNameView.setText(pointAndLine.line.getName());
             viewHolder.valueView.setTextColor(pointAndLine.line.getColor());

@@ -71,16 +71,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             titleView.setText(itemView.getContext().getString(R.string.chart_title, position + 1));
 
             ViewUtils.onPreDraw(chartView, () -> {
-                rangeSeekBar.setValues(graph.left * 100, graph.right * 100);
+                rangeSeekBar.setValues(graph.left, graph.right);
             });
         }
 
         @Override
         public void onRangeChanged(float leftValue, float rightValue, boolean fromUser) {
             Graph graph = mChartData.getGraphs().get(getAdapterPosition());
-            graph.left = leftValue / 100f;
-            graph.right = rightValue / 100f;
-            chartView.setLeftAndRight(graph.left, graph.right, fromUser);
+            graph.left = leftValue;
+            graph.right = rightValue;
+            chartView.setChartLeftAndRight(graph.left / 100f, graph.right / 100f, fromUser);
         }
 
         @Override

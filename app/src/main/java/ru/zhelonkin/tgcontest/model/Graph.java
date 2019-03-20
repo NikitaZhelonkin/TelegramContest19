@@ -1,11 +1,9 @@
 package ru.zhelonkin.tgcontest.model;
 
-import android.animation.ObjectAnimator;
-import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -19,19 +17,8 @@ public class Graph {
     private long mMinY;
     private long mMaxY;
 
-    public float left = 0.7f;
-    public float right = 1f;
-
-    private Value[] mXAxis;
-    private Value[] mYAxis;
-
-    public Value[] getXAxis() {
-        return mXAxis;
-    }
-
-    public Value[] getYXis() {
-        return mYAxis;
-    }
+    public float left = 70f;
+    public float right = 100f;
 
     public Graph(@NonNull List<Line> lines) {
         mLines = lines;
@@ -39,57 +26,6 @@ public class Graph {
         mMaxX = calcMaxX();
         mMinY = 0;//calcMinY();
         mMaxY = calcMaxY();
-        fillXAxis();
-        fillYAxis();
-    }
-
-    private static final DateFormatter DATE_FORMATTER = new DateFormatter();
-
-    private static final long DAY = TimeUnit.DAYS.toMillis(1);
-
-    private void fillXAxis() {
-        int rangeInDays = (int) (rangeX() / DAY);
-        long d = gridSizeForRange((long) (rangeInDays * (0.1f)));
-        int count = (int) (rangeInDays / d);
-        mXAxis = new Value[count];
-        for (int i = 0; i < count; i++) {
-            Value v = new Value();
-            v.index = i * d;
-            v.value = minX() + v.index * DAY;
-            v.displayValue = DATE_FORMATTER.format(v.value);
-            mXAxis[i] = v;
-        }
-    }
-
-    private void fillYAxis() {
-        long rangeY = (long) (rangeY());
-        long d = gridSizeForRange((long) (rangeY * (0.1f)));
-        int count = (int) (rangeY() / d);
-
-        mYAxis = new Value[count];
-        for (int i = 0; i < count; i++) {
-            Value v = new Value();
-            v.index = i * d;
-            v.value = minY() + v.index;
-            v.displayValue = String.valueOf(v.value);
-            mYAxis[i] = v;
-        }
-    }
-
-    public long gridSizeForRange(long range) {
-        int[] steps = new int[]{5, 10, 25, 50, 100, 200, 250, 500};
-        int degree = 0;
-        long temp = range;
-        while (temp > 500) {
-            temp /= 10;
-            degree++;
-        }
-        for (int step : steps) {
-            if (temp < step) {
-                return (long) (step / 5 * Math.pow(10, degree));
-            }
-        }
-        return (long) (steps[steps.length - 1] / 5 * Math.pow(10, degree));
     }
 
 
@@ -154,68 +90,25 @@ public class Graph {
         return minY;
     }
 
-    public static class Value {
 
-        public long index;
-        public long value;
-        public String displayValue;
-
-        private float alpha = 1;
-        private float targetAlpha = 1;
-
-        private ObjectAnimator animator;
-
-        @Keep
-        public void setAlpha(float alpha) {
-            this.alpha = alpha;
-        }
-
-        @Keep
-        public float getAlpha() {
-            return alpha;
-        }
-
-        public void setVisible(boolean visible, boolean animate, Runnable runnable) {
-            if (!animate) {
-                targetAlpha = visible ? 1 : 0;
-                alpha = targetAlpha;
-                runnable.run();
-                return;
-            }
-            WeakReference<Runnable> reference = new WeakReference<>(runnable);
-            if (visible && targetAlpha != 1) {
-                targetAlpha = 1;
-                if (animator != null) animator.cancel();
-                animator = ObjectAnimator.ofFloat(this, "alpha", 1);
-                animator.addUpdateListener(it -> {
-                    if (reference.get() != null) reference.get().run();
-                });
-                animator.setDuration(200);
-                animator.start();
-            } else if (!visible && targetAlpha != 0) {
-                targetAlpha = 0;
-                if (animator != null) animator.cancel();
-                animator = ObjectAnimator.ofFloat(this, "alpha", 0);
-                animator.addUpdateListener(it -> {
-                    if (reference.get() != null) reference.get().run();
-                });
-                animator.setDuration(200);
-                animator.start();
+    public List<PointAndLine> pointsAt(long target) {
+        List<PointAndLine> pointLList = new ArrayList<>();
+        for (Line line : getLines()) {
+            if (!line.isVisible()) continue;
+            for (PointL p : line.getPoints()) {
+                if (p.x == target) pointLList.add(new PointAndLine(p, line));
             }
         }
-
+        return pointLList;
     }
 
-    private static class DateFormatter {
+    public class PointAndLine {
+        public PointL point;
+        public Line line;
 
-        private static final String DATE_FORMAT = "MMM dd";
-
-        String format(long date) {
-            return capitalize(new SimpleDateFormat(DATE_FORMAT, Locale.US).format(date));
-        }
-
-        private static String capitalize(String string) {
-            return string.substring(0, 1).toUpperCase() + string.substring(1);
+        PointAndLine(PointL point, Line line) {
+            this.point = point;
+            this.line = line;
         }
     }
 
