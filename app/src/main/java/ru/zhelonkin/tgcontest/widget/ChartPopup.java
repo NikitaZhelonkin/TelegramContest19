@@ -10,11 +10,12 @@ import android.view.WindowManager;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Locale;
 
 import ru.zhelonkin.tgcontest.R;
+import ru.zhelonkin.tgcontest.formatter.DateFormatter;
+import ru.zhelonkin.tgcontest.formatter.SimpleNumberFormatter;
+import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.model.Graph;
 
 class ChartPopup {
@@ -24,6 +25,8 @@ class ChartPopup {
     private Adapter mAdapter;
 
     private PopupWindow mPopupWindow;
+
+    private DateFormatter mDateFormatter = new DateFormatter("E, MMM dd");
 
     private int mXOffset;
     private int mYOffset;
@@ -49,7 +52,7 @@ class ChartPopup {
 
     void bindData(List<Graph.PointAndLine> points) {
         if (points.size() == 0) return;
-        mXValueView.setText(new DateFormatter().format(points.get(0).point.x));
+        mXValueView.setText(mDateFormatter.format(points.get(0).point.x));
         mAdapter.setData(points);
 
     }
@@ -61,7 +64,9 @@ class ChartPopup {
 
     void update(View anchor, int x, int y) {
         int[] location = locationInWindow(anchor);
-        mPopupWindow.update(location[0] + x + mXOffset, location[1] + y + mYOffset, WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT);
+        mPopupWindow.update(location[0] + x + mXOffset, location[1] + y + mYOffset,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT);
     }
 
     void dismiss() {
@@ -78,19 +83,9 @@ class ChartPopup {
         return location;
     }
 
-    private static class DateFormatter {
-
-        private static final String DATE_FORMAT = "E, MMM dd";
-
-        String format(long date) {
-            return capitalize(new SimpleDateFormat(DATE_FORMAT, Locale.US).format(date));
-        }
-        private static String capitalize(String string) {
-            return string.substring(0, 1).toUpperCase() + string.substring(1);
-        }
-    }
-
     private static class Adapter extends DynamicViewDelegate.Adapter<Adapter.ViewHolder> {
+
+        private Formatter mValueFormatter = new SimpleNumberFormatter();
 
         private List<Graph.PointAndLine> mPointAndLines;
 
@@ -116,7 +111,7 @@ class ChartPopup {
             viewHolder.lineNameView.setTextColor(pointAndLine.line.getColor());
             viewHolder.lineNameView.setText(pointAndLine.line.getName());
             viewHolder.valueView.setTextColor(pointAndLine.line.getColor());
-            viewHolder.valueView.setText(String.valueOf(pointAndLine.point.y));
+            viewHolder.valueView.setText(mValueFormatter.format(pointAndLine.point.y));
         }
 
         class ViewHolder extends DynamicViewDelegate.ViewHolder {

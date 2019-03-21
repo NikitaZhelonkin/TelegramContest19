@@ -12,6 +12,8 @@
         <item name="colorGrid">@color/colorGrid</item>
         <item name="popupStyle">@style/Popup</item>
         <item name="textAppearanceChart">@style/TextAppearance.Chart</item>
+        <item name="android:listDivider">@drawable/shadow</item>
+        <item name="actionBarStyle">@style/ActionBar</item>
     </style>
 
     <style name="AppTheme.Night" parent="Theme.AppCompat">
@@ -26,6 +28,12 @@
         <item name="colorGrid">@color/colorGridNight</item>
         <item name="popupStyle">@style/Popup.Night</item>
         <item name="textAppearanceChart">@style/TextAppearance.Chart.Night</item>
+        <item name="android:listDivider">@drawable/shadow</item>
+        <item name="actionBarStyle">@style/ActionBar</item>
+    </style>
+
+    <style name="ActionBar" parent="Widget.AppCompat.ActionBar.Solid">
+        <item name="elevation">0dp</item>
     </style>
 
     <style name="RangeSeekBar">

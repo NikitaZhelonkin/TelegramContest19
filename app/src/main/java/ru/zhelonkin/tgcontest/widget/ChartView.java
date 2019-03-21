@@ -10,6 +10,7 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.os.Build;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
@@ -18,6 +19,7 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -28,18 +30,18 @@ import java.util.List;
 import java.util.Map;
 
 import ru.zhelonkin.tgcontest.Alpha;
+import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.NumberFormatter;
-import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.model.PointL;
 
 public class ChartView extends View {
 
-    private final Formatter DATE_FORMATTER = new CachingFormatter(new DateFormatter());
+    private final Formatter DATE_FORMATTER = new CachingFormatter(new DateFormatter("MMM dd"));
     private final Formatter NUMBER_FORMATTER = new CachingFormatter(new NumberFormatter());
 
     private static final long INVALID_TARGET = -1L;
@@ -60,10 +62,11 @@ public class ChartView extends View {
 
     private AnimatorSet mLineAlphaAnimator;
 
-
     private Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint mGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private TextPaint mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+
+    private Path mLinePath = new Path();
 
     private int mSurfaceColor;
 
@@ -114,9 +117,12 @@ public class ChartView extends View {
         int textAppearance = a.getResourceId(R.styleable.ChartView_textAppearance, -1);
         a.recycle();
 
+        setLayerType(LAYER_TYPE_HARDWARE, null);
+
         mLinePaint.setStrokeWidth(lineWidth);
         mLinePaint.setStyle(Paint.Style.STROKE);
         mLinePaint.setStrokeCap(Paint.Cap.ROUND);
+        mLinePaint.setStrokeJoin(Paint.Join.ROUND);
 
         mGridPaint.setStrokeWidth(lineWidth / 2f);
         mGridPaint.setColor(gridColor);
@@ -319,8 +325,16 @@ public class ChartView extends View {
     }
 
     private void drawLine(Canvas canvas, Line line) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            drawLineWithPath(canvas, line);
+        } else {
+            drawLineDefault(canvas, line);
+        }
+    }
+
+    private void drawLineDefault(Canvas canvas, Line line) {
         mLinePaint.setColor(line.getColor());
-        mLinePaint.setAlpha((int) (255 * line.getAlpha()));
+        mLinePaint.setAlpha(Alpha.toInt(line.getAlpha()));
 
         PointL[] points = line.getPoints();
         float[] lineBuffer = new float[points.length * 4];
@@ -337,8 +351,19 @@ public class ChartView extends View {
             lastX = x;
             lastY = y;
         }
-
         canvas.drawLines(lineBuffer, mLinePaint);
+    }
+
+    private void drawLineWithPath(Canvas canvas, Line line) {
+        mLinePaint.setColor(line.getColor());
+        mLinePaint.setAlpha(Alpha.toInt(line.getAlpha()));
+        mLinePath.reset();
+        PointL[] points = line.getPoints();
+        mLinePath.moveTo(pointX(points[0].x), pointY(points[0].y));
+        for (int i = 1; i < points.length; i++) {
+            mLinePath.lineTo(pointX(points[i].x), pointY(points[0].y));
+        }
+        canvas.drawPath(mLinePath, mLinePaint);
     }
 
     private void drawDots(Canvas canvas, Line line) {
@@ -409,7 +434,6 @@ public class ChartView extends View {
         }
         mTextPaint.setAlpha(Alpha.toInt(1f));
     }
-
 
 
     private Long findTargetX(float touchX) {
@@ -562,7 +586,7 @@ public class ChartView extends View {
                 degree++;
             }
             for (int step : steps) {
-                if (temp <= step) {
+                if (temp <= step*1.2) {
                     return (long) (step / 5 * Math.pow(10, degree));
                 }
             }
@@ -570,7 +594,7 @@ public class ChartView extends View {
         }
 
         public long gridSizeForXRange(long range) {
-            return (long) Math.pow(2, Math.ceil(Math.log(range/6f)/Math.log(2)));
+            return (long) Math.pow(2, Math.ceil(Math.log(range / 6f) / Math.log(2)));
         }
 
 
@@ -583,7 +607,7 @@ public class ChartView extends View {
 
             private ObjectAnimator animator;
 
-            Value(long value){
+            Value(long value) {
                 this.value = value;
             }
 
@@ -609,7 +633,7 @@ public class ChartView extends View {
                     if (animator != null) animator.cancel();
                     animator = ObjectAnimator.ofFloat(this, "alpha", 1);
                     animator.addUpdateListener(it -> {
-                       invalidate();
+                        invalidate();
                     });
                     animator.setDuration(250);
                     animator.start();

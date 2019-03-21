@@ -5,7 +5,11 @@ import java.util.Locale;
 
 public class DateFormatter implements Formatter {
 
-    private static final String DATE_FORMAT = "MMM dd";
+    private String mDateFormat;
+
+    public DateFormatter(String dateFormat) {
+        mDateFormat = dateFormat;
+    }
 
     private static String capitalize(String string) {
         return string.substring(0, 1).toUpperCase() + string.substring(1);
@@ -13,6 +17,6 @@ public class DateFormatter implements Formatter {
 
     @Override
     public String format(long value) {
-        return capitalize(new SimpleDateFormat(DATE_FORMAT, Locale.US).format(value));
+        return capitalize(new SimpleDateFormat(mDateFormat, Locale.US).format(value));
     }
 }

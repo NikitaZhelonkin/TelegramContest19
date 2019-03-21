@@ -2,11 +2,8 @@ package ru.zhelonkin.tgcontest.model;
 
 import android.support.annotation.NonNull;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 public class Graph {
 

@@ -7,12 +7,7 @@ public class NumberFormatter implements Formatter {
 
     @Override
     public String format(long number) {
-        if (number > 0 && number < 0.1) {
-            return String.format(Locale.US, "%.4f", number);
-        }
         NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
-        numberFormat.setMinimumFractionDigits(0);
-        numberFormat.setMaximumFractionDigits(0);
         if (number < 10000) return numberFormat.format(number);
         numberFormat.setMinimumFractionDigits(1);
         numberFormat.setMaximumFractionDigits(1);
