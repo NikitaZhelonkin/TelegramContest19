@@ -38,15 +38,11 @@ public class RangeSeekBar extends View {
 
     private Paint mPaint;
 
-    private boolean mIsDragging;
-
     private int mScaledEdgeSlop;
     private int mScaledTouchSlop;
 
-    private float mTouchDownX;
-    private float mLastX;
-
-    private DragMode mDragMode;
+    private TouchInfo mPrimaryTouch;
+    private TouchInfo mSecondaryTouch;
 
     protected enum DragMode {LEFT, RIGHT, BOTH}
 
@@ -78,8 +74,6 @@ public class RangeSeekBar extends View {
         array.recycle();
 
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        mDragMode = null;
 
         mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mScaledEdgeSlop = (int) (ViewConfiguration.get(context).getScaledEdgeSlop() * 1.5f);
@@ -129,16 +123,16 @@ public class RangeSeekBar extends View {
         mGap = Math.max(0, Math.min(gap, mMaxValue - mMinValue));
     }
 
-    private void trackTouchEvent(MotionEvent event) {
-        if (mActivePointerId == INVALID_POINTER_ID) return;
-        int pointerIndex = event.findPointerIndex(mActivePointerId);
-        final float x = event.getX(pointerIndex);
-        final float dx = x - mLastX;
-        if (DragMode.LEFT.equals(mDragMode)) {
+    private void trackTouchEvent(MotionEvent event, TouchInfo touchInfo) {
+        int index = event.findPointerIndex(touchInfo.id);
+        if (index == -1) return;
+        float x = event.getX(index);
+        float dx = x - touchInfo.lastX;
+        if (DragMode.LEFT.equals(touchInfo.dragMode)) {
             setLeftValue(coordToValue(valueToCoord(mLeftValue) + dx));
-        } else if (DragMode.RIGHT.equals(mDragMode)) {
+        } else if (DragMode.RIGHT.equals(touchInfo.dragMode)) {
             setRightValue(coordToValue(valueToCoord(mRightValue) + dx));
-        } else if (DragMode.BOTH.equals(mDragMode)) {
+        } else if (DragMode.BOTH.equals(touchInfo.dragMode)) {
             final float range = mRightValue - mLeftValue;
             if (dx > 0) {
                 setRightValue(coordToValue(valueToCoord(mRightValue) + dx));
@@ -149,9 +143,10 @@ public class RangeSeekBar extends View {
             }
 
         }
-        mLastX = x;
+        touchInfo.lastX = x;
         notifyRangeChanged(true);
     }
+
 
     private void notifyRangeChanged(boolean fromUser) {
         if (mOnRangeSeekBarChangeListener != null) {
@@ -169,13 +164,6 @@ public class RangeSeekBar extends View {
         }
     }
 
-    private void onStartTrackingTouch() {
-        mIsDragging = true;
-    }
-
-    private void onStopTrackingTouch() {
-        mIsDragging = false;
-    }
 
     private float valueToCoord(double coord) {
         float width = getWidth();
@@ -247,18 +235,6 @@ public class RangeSeekBar extends View {
         canvas.drawRect(max - mThumbWidth, 0, max, getHeight(), mPaint);
     }
 
-    private void startDrag(MotionEvent event) {
-        setPressed(true);
-        invalidate();
-        onStartTrackingTouch();
-        trackTouchEvent(event);
-        attemptClaimDrag();
-    }
-
-    private static final int INVALID_POINTER_ID = -1;
-
-    private int mActivePointerId = INVALID_POINTER_ID;
-
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public synchronized boolean onTouchEvent(MotionEvent event) {
@@ -267,64 +243,99 @@ public class RangeSeekBar extends View {
 
         final int action = event.getAction();
 
+        if (event.getPointerCount() > 2) {
+            return false;
+        }
+
         switch (action & MotionEvent.ACTION_MASK) {
 
             case MotionEvent.ACTION_DOWN:
-                int pointerIndex = event.getActionIndex();
-                mTouchDownX = event.getX(pointerIndex);
-                mLastX = mTouchDownX;
-                mDragMode = evalDragMode(mTouchDownX);
-                mActivePointerId = event.getPointerId(0);
+                mPrimaryTouch = new TouchInfo(event);
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                mSecondaryTouch = new TouchInfo(event);
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (mDragMode != null) {
-                    if (mIsDragging) {
-                        trackTouchEvent(event);
+                if (mPrimaryTouch != null && event.findPointerIndex(mPrimaryTouch.id) != -1) {
+                    if (mPrimaryTouch.isDragging) {
+                        trackTouchEvent(event, mPrimaryTouch);
                     } else {
-                        pointerIndex = event.findPointerIndex(mActivePointerId);
-                        final float x = event.getX(pointerIndex);
-                        if (Math.abs(x - mTouchDownX) > mScaledTouchSlop) {
-                            mLastX = x;
-                            startDrag(event);
+                        final float x = event.getX(event.findPointerIndex(mPrimaryTouch.id));
+                        if (Math.abs(x - mPrimaryTouch.touchDownX) > mScaledTouchSlop) {
+                            mPrimaryTouch.lastX = x;
+
+                            setPressed(true);
+                            invalidate();
+                            mPrimaryTouch.isDragging = true;
+                            trackTouchEvent(event, mPrimaryTouch);
+                            attemptClaimDrag();
+                        }
+                    }
+                }
+                if (mSecondaryTouch != null && event.findPointerIndex(mSecondaryTouch.id) != -1) {
+                    if (mSecondaryTouch.isDragging) {
+                        trackTouchEvent(event, mSecondaryTouch);
+                    } else {
+                        int index = event.findPointerIndex(mSecondaryTouch.id);
+                        final float x = event.getX(index);
+                        if (Math.abs(x - mSecondaryTouch.touchDownX) > mScaledTouchSlop) {
+                            mSecondaryTouch.lastX = x;
+                            mSecondaryTouch.isDragging = true;
+                            trackTouchEvent(event, mSecondaryTouch);
                         }
                     }
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
-                pointerIndex = event.getActionIndex();
-                if (event.getPointerId(pointerIndex) == mActivePointerId) {
+                float pointerIndex = event.getActionIndex();
+                if (event.getPointerId(event.getActionIndex()) == mPrimaryTouch.id) {
                     // This was our active pointer going up. Choose a new
                     // active pointer and adjust accordingly.
                     final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
-                    mTouchDownX = event.getX(newPointerIndex);
-                    mLastX = mTouchDownX;
-                    mDragMode = evalDragMode(mTouchDownX);
-                    mActivePointerId = event.getPointerId(newPointerIndex);
+                    mPrimaryTouch.touchDownX = event.getX(newPointerIndex);
+                    mPrimaryTouch.lastX = mPrimaryTouch.touchDownX;
+                    mPrimaryTouch.dragMode = evalDragMode(mPrimaryTouch.touchDownX);
+                    mPrimaryTouch.id = event.getPointerId(newPointerIndex);
                 }
+                mSecondaryTouch = null;
                 break;
             case MotionEvent.ACTION_UP:
-                if (mIsDragging) {
-                    trackTouchEvent(event);
-                    onStopTrackingTouch();
+                if (mPrimaryTouch.isDragging) {
+                    trackTouchEvent(event, mPrimaryTouch);
+                    mPrimaryTouch.isDragging = false;
                     setPressed(false);
                 }
-                mActivePointerId = INVALID_POINTER_ID;
-                mDragMode = null;
+                mPrimaryTouch = null;
                 invalidate();
                 break;
             case MotionEvent.ACTION_CANCEL:
-                if (mIsDragging) {
-                    onStopTrackingTouch();
+                if (mPrimaryTouch.isDragging) {
+                    mPrimaryTouch.isDragging = false;
                     setPressed(false);
                 }
-                mActivePointerId = INVALID_POINTER_ID;
-                mDragMode = null;
+                mPrimaryTouch = null;
                 invalidate();
                 break;
         }
 
         return true;
 
+    }
+
+    private class TouchInfo {
+        private int id;
+        private boolean isDragging;
+        private float touchDownX;
+        private float lastX;
+        private DragMode dragMode;
+
+        TouchInfo(MotionEvent event) {
+            int index = event.getActionIndex();
+            id = event.getPointerId(index);
+            touchDownX = event.getX(index);
+            dragMode = evalDragMode(touchDownX);
+            lastX = touchDownX;
+        }
     }
 
 
