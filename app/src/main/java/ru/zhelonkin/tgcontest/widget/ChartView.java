@@ -361,7 +361,7 @@ public class ChartView extends View {
         PointL[] points = line.getPoints();
         mLinePath.moveTo(pointX(points[0].x), pointY(points[0].y));
         for (int i = 1; i < points.length; i++) {
-            mLinePath.lineTo(pointX(points[i].x), pointY(points[0].y));
+            mLinePath.lineTo(pointX(points[i].x), pointY(points[i].y));
         }
         canvas.drawPath(mLinePath, mLinePaint);
     }
