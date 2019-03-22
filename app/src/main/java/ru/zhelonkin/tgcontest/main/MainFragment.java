@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,10 +46,11 @@ public class MainFragment extends Fragment implements
         recyclerView.addItemDecoration(new DividerItemDecoration(view.getContext(), DividerItemDecoration.VERTICAL));
         recyclerView.setAdapter(mMainAdapter);
 
-        if (savedInstanceState == null) {
-            loadData(view.getContext());
+        ChartData chartData = savedInstanceState != null ? HolderFragment.holderFragmentFor(this).getChartData() : null;
+        if (chartData != null) {
+            onSuccess(chartData);
         } else {
-            onSuccess(HolderFragment.holderFragmentFor(this).getChartData());
+            loadData(view.getContext());
         }
     }
 
