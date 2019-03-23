@@ -19,7 +19,6 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -533,10 +532,14 @@ public class ChartView extends View {
         private long mXGridSize = -1;
         private long mYGridSize = -1;
 
+        private static  final  int X_GRID_COUNT = 6;
+        private static  final  int Y_GRID_COUNT = 4;
+
+
         private void updateXGridSize(boolean animate) {
             if (mGraph == null || mIsPreviewMode) return;
             long rangeY = (long) (chartScaleX() * (long) mGraph.rangeX());
-            long gridSize = gridSizeForXRange(rangeY);
+            long gridSize = calcXGridSize(rangeY, X_GRID_COUNT);
             if (mXGridSize == gridSize) return;
             mXGridSize = gridSize;
             for (Long index : mXValues.keySet()) {
@@ -558,7 +561,7 @@ public class ChartView extends View {
         private void updateYGridSize(boolean animate) {
             if (mGraph == null || mIsPreviewMode) return;
             long rangeY = (long) ((mTargetChartTop - mTargetChartBottom) * mGraph.rangeY());
-            long gridSize = gridSizeForYRange(rangeY);
+            long gridSize = calcYGridSize(rangeY, Y_GRID_COUNT);
             if (mYGridSize == gridSize) return;
             mYGridSize = gridSize;
 
@@ -577,24 +580,29 @@ public class ChartView extends View {
             }
         }
 
-        public long gridSizeForYRange(long range) {
-            int[] steps = new int[]{5, 10, 25, 50, 100, 200, 250, 500};
-            int degree = 0;
-            long temp = range;
-            while (temp > 500) {
+        long calcYGridSize(long range, int count) {
+            int[] steps = new int[]{1, 2, 5, 10, 20, 40, 50, 100};
+            long avg = range / count;
+            int degree = 1;
+            long temp = avg;
+            while (temp > 100) {
                 temp /= 10;
-                degree++;
+                degree *= 10;
             }
-            for (int step : steps) {
-                if (temp <= step*1.2) {
-                    return (long) (step / 5 * Math.pow(10, degree));
+            int step = steps[0];
+            long minDist = Math.abs(step - temp);
+            for (int s : steps) {
+                long dist = Math.abs(s - temp);
+                if (dist < minDist) {
+                    minDist = dist;
+                    step = s;
                 }
             }
-            return (long) (steps[steps.length - 1] / 5 * Math.pow(10, degree));
+            return step * degree;
         }
 
-        public long gridSizeForXRange(long range) {
-            return (long) Math.pow(2, Math.ceil(Math.log(range / 6f) / Math.log(2)));
+        long calcXGridSize(long range, int count) {
+            return (long) Math.pow(2, Math.ceil(Math.log(range / (float) count) / Math.log(2)));
         }
 
 
