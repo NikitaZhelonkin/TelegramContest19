@@ -37,6 +37,12 @@ android {
         }
     }
 
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "tgcontest-${variant.name}.apk"
+        }
+    }
+
 }
 
 dependencies {
