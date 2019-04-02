@@ -119,9 +119,7 @@ public class ChartView extends View {
         setLayerType(LAYER_TYPE_HARDWARE, null);
 
         mLinePaint.setStrokeWidth(lineWidth);
-        mLinePaint.setStyle(Paint.Style.STROKE);
-        mLinePaint.setStrokeCap(Paint.Cap.ROUND);
-        mLinePaint.setStrokeJoin(Paint.Join.ROUND);
+        mLinePaint.setStrokeCap(Paint.Cap.SQUARE);
 
         mGridPaint.setStrokeWidth(lineWidth / 2f);
         mGridPaint.setColor(gridColor);
