@@ -1,6 +1,6 @@
 package ru.zhelonkin.tgcontest.model;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 import java.util.Arrays;
 

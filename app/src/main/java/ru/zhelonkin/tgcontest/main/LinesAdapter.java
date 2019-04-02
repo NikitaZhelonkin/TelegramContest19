@@ -1,9 +1,9 @@
 package ru.zhelonkin.tgcontest.main;
 
 import android.content.res.ColorStateList;
-import android.support.annotation.NonNull;
-import android.support.v4.widget.CompoundButtonCompat;
-import android.support.v7.widget.AppCompatCheckBox;
+import androidx.annotation.NonNull;
+import androidx.core.widget.CompoundButtonCompat;
+import androidx.appcompat.widget.AppCompatCheckBox;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
