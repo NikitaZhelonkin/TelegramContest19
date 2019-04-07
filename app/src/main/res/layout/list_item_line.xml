@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="@dimen/list_item_height"
-    android:background="?selectableItemBackground">
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
 
-    <androidx.appcompat.widget.AppCompatCheckBox
+    <ru.zhelonkin.tgcontest.widget.Checkbox
         android:id="@+id/checkbox"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
-        android:layout_gravity="start|center_vertical"
-        android:layout_marginStart="12dp"
-        android:layout_marginLeft="12dp"
-        android:paddingStart="12dp"
-        android:paddingLeft="12dp"
-        android:textSize="16sp"
+        style="@style/Checkbox"
         tools:ignore="RtlSymmetry"
         tools:text="Label" />
 

@@ -4,7 +4,7 @@
 
     <item
         android:id="@+id/theme"
-        android:icon="@drawable/ic_daynight_v2_white_24"
+        android:icon="?moonIcon"
         android:title="@string/switch_theme"
         app:showAsAction="ifRoom">
 

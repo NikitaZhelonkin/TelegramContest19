@@ -4,8 +4,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.Region;
+import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -31,12 +32,9 @@ public class RangeSeekBar extends View {
     private float mLeftValue;
     private float mRightValue;
 
-    private int mBackgroundColor;
-    private int mThumbColor;
-    private int mThumbStrokeWidth;
-    private int mThumbWidth;
-
-    private Paint mPaint;
+    private Drawable mBgDrawable;
+    private Drawable mThumbDrawable;
+    private Rect mThumbPadding;
 
     private int mScaledEdgeSlop;
     private int mScaledTouchSlop;
@@ -57,14 +55,15 @@ public class RangeSeekBar extends View {
     public RangeSeekBar(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
-        DisplayMetrics dm = context.getResources().getDisplayMetrics();
-
         TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.RangeSeekBar, defStyleAttr, 0);
 
-        mBackgroundColor = array.getColor(R.styleable.RangeSeekBar_backgroundColor, Color.GRAY);
-        mThumbColor = array.getColor(R.styleable.RangeSeekBar_thumbColor, Color.BLACK);
-        mThumbStrokeWidth = array.getDimensionPixelSize(R.styleable.RangeSeekBar_thumbStrokeWidth, (int) dm.density);
-        mThumbWidth = array.getDimensionPixelSize(R.styleable.RangeSeekBar_thumbWidth, (int) (dm.density));
+        mBgDrawable = array.getDrawable(R.styleable.RangeSeekBar_bgDrawable);
+        mThumbDrawable = array.getDrawable(R.styleable.RangeSeekBar_thumbDrawable);
+        if (mThumbDrawable != null) {
+            mThumbPadding = new Rect();
+            mThumbDrawable.getPadding(mThumbPadding);
+        }
+
         mMinValue = array.getFloat(R.styleable.RangeSeekBar_minValue, 0);
         mMaxValue = array.getFloat(R.styleable.RangeSeekBar_maxValue, 100);
         float leftValue = array.getFloat(R.styleable.RangeSeekBar_leftValue, mMinValue);
@@ -73,7 +72,6 @@ public class RangeSeekBar extends View {
 
         array.recycle();
 
-        mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mScaledEdgeSlop = (int) (ViewConfiguration.get(context).getScaledEdgeSlop() * 1.5f);
@@ -207,32 +205,25 @@ public class RangeSeekBar extends View {
         }
     }
 
+
     @Override
     protected synchronized void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        if (mThumbDrawable == null || mBgDrawable == null) return;
+
         float min = valueToCoord(mLeftValue);
         float max = valueToCoord(mRightValue);
 
-        mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setAntiAlias(true);
-        mPaint.setColor(mBackgroundColor);
-        canvas.drawRect(0, 0, min, getHeight(), mPaint);
-        canvas.drawRect(max, 0, getWidth(), getHeight(), mPaint);
+        int saved = canvas.save();
+        mBgDrawable.setBounds(0, 0, getWidth(), getHeight());
+        canvas.clipRect(min + mThumbPadding.left, 0, max - mThumbPadding.right, getHeight(), Region.Op.DIFFERENCE);
+        mBgDrawable.draw(canvas);
+        canvas.restoreToCount(saved);
 
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setColor(mThumbColor);
-        mPaint.setStrokeWidth(mThumbStrokeWidth);
+        mThumbDrawable.setBounds((int) min, 0, (int) max, getHeight());
+        mThumbDrawable.draw(canvas);
 
-        canvas.drawRect(min + mThumbWidth + mPaint.getStrokeWidth() / 2f,
-                mPaint.getStrokeWidth() / 2f,
-                max - mThumbWidth - mPaint.getStrokeWidth() / 2f,
-                getHeight() - mPaint.getStrokeWidth() / 2f,
-                mPaint);
-
-        mPaint.setStyle(Paint.Style.FILL);
-        canvas.drawRect(min, 0, min + mThumbWidth, getHeight(), mPaint);
-        canvas.drawRect(max - mThumbWidth, 0, max, getHeight(), mPaint);
     }
 
     @SuppressLint("ClickableViewAccessibility")

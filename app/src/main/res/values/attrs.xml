@@ -7,6 +7,7 @@
     <attr name="colorGrid" format="color"/>
 
     <attr name="popupStyle" format="reference"/>
+    <attr name="moonIcon" format="reference"/>
 
     <attr name="rangeSeekBarStyle" format="reference"/>
     <attr name="textAppearanceChart" format="reference"/>
@@ -19,9 +20,8 @@
         <attr name="rightValue" format="integer"/>
         <attr name="gap" format="integer"/>
         <attr name="backgroundColor" format="color"/>
-        <attr name="thumbColor" format="color"/>
-        <attr name="thumbWidth" format="dimension"/>
-        <attr name="thumbStrokeWidth" format="dimension"/>
+        <attr name="bgDrawable" format="reference"/>
+        <attr name="thumbDrawable" format="reference"/>
     </declare-styleable>
 
     <declare-styleable name="ChartView">
@@ -31,5 +31,10 @@
         <attr name="surfaceColor" format="color"/>
         <attr name="textAppearance" format="reference"/>
         <attr name="textPadding" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="FlowLayout">
+        <attr name="verticalSpacing" format="dimension"/>
+        <attr name="horizontalSpacing" format="dimension"/>
     </declare-styleable>
 </resources>

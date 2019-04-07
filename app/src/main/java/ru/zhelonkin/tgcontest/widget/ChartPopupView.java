@@ -27,7 +27,7 @@ public class ChartPopupView extends LinearLayout {
 
     private boolean mIsShowing;
 
-    private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("E, MMM dd"));
+    private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("E, dd MMM YYYY"));
 
     public ChartPopupView(@NonNull Context context) {
         this(context, null);
@@ -111,8 +111,7 @@ public class ChartPopupView extends LinearLayout {
         @Override
         protected void onBindViewHolder(ChartPopupView.Adapter.ViewHolder viewHolder, int position, Object payload) {
             Graph.PointAndLine pointAndLine = mPointAndLines.get(position);
-            viewHolder.lineNameView.setTextColor(pointAndLine.line.getColor());
-            viewHolder.lineNameView.setText(pointAndLine.line.getName());
+            viewHolder.lineNameView.setText("Label "+pointAndLine.line.getName());
             viewHolder.valueView.setTextColor(pointAndLine.line.getColor());
             viewHolder.valueView.setText(mValueFormatter.format(pointAndLine.point.y));
         }

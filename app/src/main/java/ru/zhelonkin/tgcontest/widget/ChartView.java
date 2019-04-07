@@ -240,13 +240,12 @@ public class ChartView extends FrameLayout {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (mGraph == null) return;
-        if (!mIsPreviewMode) drawYAxis(canvas);
         if (!mIsPreviewMode && mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
             if (mTargetX != INVALID_TARGET && line.isVisible()) drawDots(canvas, line);
         }
-        if (!mIsPreviewMode) drawYAxisText(canvas);
+        if (!mIsPreviewMode) drawYAxis(canvas);
         if (!mIsPreviewMode) drawXAxis(canvas);
     }
 
@@ -411,28 +410,16 @@ public class ChartView extends FrameLayout {
             Axises.Value v = mAxises.mYValues.get(index);
             float y = pointY(v.value);
             if (v.getAlpha() != 0) {
-                mGridPaint.setAlpha(Alpha.toInt(v.getAlpha()));
+                mGridPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.2f));
                 canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
+                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha()));
+                canvas.drawText(NUMBER_FORMATTER.format(v.value), 0, y-mTextPadding, mTextPaint);
             }
-            mGridPaint.setAlpha(Alpha.toInt(1f));
+            mGridPaint.setAlpha(Alpha.toInt(0.2f));
         }
         canvas.restoreToCount(count);
     }
 
-    private void drawYAxisText(Canvas canvas) {
-        int count = canvas.save();
-        canvas.clipRect(getPaddingLeft(), getPaddingTop(), getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
-        for (Long index : mAxises.mYValues.keySet()) {
-            Axises.Value v = mAxises.mYValues.get(index);
-            float y = pointY(v.value) - mTextPadding;
-            if (v.getAlpha() != 0) {
-                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha()));
-                canvas.drawText(NUMBER_FORMATTER.format(v.value), 0, y, mTextPaint);
-            }
-        }
-        mTextPaint.setAlpha(Alpha.toInt(1f));
-        canvas.restoreToCount(count);
-    }
 
     private void drawXAxis(Canvas canvas) {
         for (Long index : mAxises.mXValues.keySet()) {

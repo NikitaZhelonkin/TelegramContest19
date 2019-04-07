@@ -1,26 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#517da2</color>
-    <color name="colorPrimaryDark">#426382</color>
+    <color name="colorPrimary">#ffffff</color>
+    <color name="colorPrimaryDark">#000000</color>
     <color name="colorAccent">#3896d4</color>
     <color name="colorBackground">#F0F0F0</color>
     <color name="colorSurface">#FFFFFF</color>
-    <color name="colorGrid">#e5ebef</color>
+    <color name="colorGrid">#87919b</color>
 
-    <color name="seekBarBackgroundColor">#ccf3f6f8</color>
-    <color name="seekBarThumbColor">#303f81b0</color>
+    <color name="seekBarBackgroundColor">#99e1eff8</color>
     <color name="colorDivider">#e0e0e0</color>
     <color name="textColorPrimary">@android:color/black</color>
 
-    <color name="colorPrimaryNight">#212d3b</color>
-    <color name="colorPrimaryDarkNight">#1a242e</color>
+    <color name="colorPrimaryNight">#242f3e</color>
+    <color name="colorPrimaryDarkNight">#242f3e</color>
     <color name="colorAccentNight">#7bc4fb</color>
-    <color name="colorBackgroundNight">#151e27</color>
-    <color name="colorSurfaceNight">#1d2733</color>
-    <color name="colorGridNight">#131c26</color>
+    <color name="colorBackgroundNight">#1b2433</color>
+    <color name="colorSurfaceNight">#242f3e</color>
+    <color name="colorGridNight">#92989d</color>
 
-    <color name="seekBarBackgroundColorNight">#9916202b</color>
-    <color name="seekBarThumbColorNight">#3064b7f0</color>
+    <color name="seekBarBackgroundColorNight">#99314156</color>
     <color name="colorDividerNight">#0b131e</color>
     <color name="textColorPrimaryNight">@android:color/white</color>
 </resources>

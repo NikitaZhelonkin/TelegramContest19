@@ -1,16 +1,17 @@
 package ru.zhelonkin.tgcontest.main;
 
 import android.content.res.ColorStateList;
-import androidx.annotation.NonNull;
-import androidx.core.widget.CompoundButtonCompat;
-import androidx.appcompat.widget.AppCompatCheckBox;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.core.view.ViewCompat;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Line;
+import ru.zhelonkin.tgcontest.widget.Checkbox;
 import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
 
 public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewHolder> {
@@ -50,7 +51,7 @@ public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewH
 
     class ViewHolder extends DynamicViewDelegate.ViewHolder {
 
-        AppCompatCheckBox mCheckBox;
+        Checkbox mCheckBox;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -58,8 +59,13 @@ public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewH
         }
 
         void bind(Line line) {
-            mCheckBox.setText(line.getName());
-            CompoundButtonCompat.setButtonTintList(mCheckBox, ColorStateList.valueOf(line.getColor()));
+            mCheckBox.setText("Label " + line.getName());
+            ColorStateList colorStateList = new ColorStateList(new int[][]{
+                    new int[]{android.R.attr.state_checked},
+                    new int[]{-android.R.attr.state_checked}
+            }, new int[]{Color.WHITE, line.getColor()});
+            ViewCompat.setBackgroundTintList(mCheckBox, ColorStateList.valueOf(line.getColor()));
+            mCheckBox.setTextColor(colorStateList);
             mCheckBox.setOnCheckedChangeListener(null);
             mCheckBox.setChecked(line.isVisible());
             mCheckBox.jumpDrawablesToCurrentState();
@@ -70,7 +76,6 @@ public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewH
                 }
             });
             itemView.setOnClickListener(v -> mCheckBox.setChecked(!mCheckBox.isChecked()));
-
         }
     }
 

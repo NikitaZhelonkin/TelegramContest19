@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="wrap_content"
-    android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:orientation="horizontal"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_marginLeft="10dp"
-    android:layout_marginRight="10dp"
-    android:minWidth="24dp"
+    android:layout_marginTop="8dp"
     android:layout_height="wrap_content">
 
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
+        tools:text="Joined"
+        android:layout_weight="1"
+        android:id="@+id/line_name"
+        android:textSize="12sp"
+        android:textColor="?android:textColorPrimary"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_weight="1"
         tools:text="122"
+        android:gravity="end"
         android:id="@+id/value"
         android:textSize="12sp"
         android:textStyle="bold"
         android:layout_height="wrap_content" />
 
-    <TextView
-        android:layout_width="match_parent"
-        tools:text="Joined"
-        android:layout_marginTop="2dp"
-        android:id="@+id/line_name"
-        android:textSize="12sp"
-        android:layout_height="wrap_content" />
+
 
 </LinearLayout>

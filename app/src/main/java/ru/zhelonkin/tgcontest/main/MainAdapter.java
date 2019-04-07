@@ -13,6 +13,7 @@ import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.widget.ChartView;
+import ru.zhelonkin.tgcontest.widget.DynamicFlowLayout;
 import ru.zhelonkin.tgcontest.widget.DynamicLinearLayout;
 import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 
@@ -59,7 +60,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             chartPreview = itemView.findViewById(R.id.chart_preview);
             rangeSeekBar = itemView.findViewById(R.id.rangeBar);
             rangeSeekBar.setOnRangeSeekBarChangeListener(this);
-            DynamicLinearLayout linesLayout = itemView.findViewById(R.id.line_list_layout);
+            DynamicFlowLayout linesLayout = itemView.findViewById(R.id.line_list_layout);
             linesLayout.setAdapter(linesAdapter = new LinesAdapter());
             linesAdapter.setOnCheckChangedListener(this);
         }
