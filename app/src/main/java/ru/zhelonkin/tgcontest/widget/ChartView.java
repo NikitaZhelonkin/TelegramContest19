@@ -12,22 +12,22 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Build;
-import androidx.annotation.Keep;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewConfiguration;
+import android.widget.FrameLayout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import ru.zhelonkin.tgcontest.Alpha;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
@@ -38,7 +38,7 @@ import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.model.PointL;
 
-public class ChartView extends View {
+public class ChartView extends FrameLayout {
 
     private final Formatter DATE_FORMATTER = new CachingFormatter(new DateFormatter("MMM dd"));
     private final Formatter NUMBER_FORMATTER = new CachingFormatter(new NumberFormatter());
@@ -69,8 +69,6 @@ public class ChartView extends View {
 
     private int mSurfaceColor;
 
-    private ChartPopup mChartPopup;
-
     private boolean mIsPreviewMode;
 
     private long mTargetX = INVALID_TARGET;
@@ -82,6 +80,8 @@ public class ChartView extends View {
     private int mScaledTouchSlop;
 
     private float mTextPadding;
+
+    private ChartPopupView mChartPopupView;
 
     public ChartView(Context context) {
         super(context);
@@ -119,7 +119,9 @@ public class ChartView extends View {
         setLayerType(LAYER_TYPE_HARDWARE, null);
 
         mLinePaint.setStrokeWidth(lineWidth);
+        mLinePaint.setStyle(Paint.Style.STROKE);
         mLinePaint.setStrokeCap(Paint.Cap.SQUARE);
+        mLinePaint.setStrokeJoin(Paint.Join.ROUND);
 
         mGridPaint.setStrokeWidth(lineWidth / 2f);
         mGridPaint.setColor(gridColor);
@@ -131,7 +133,15 @@ public class ChartView extends View {
             a.recycle();
         }
 
+        setWillNotDraw(false);
+
         mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+
+        mChartPopupView = new ChartPopupView(context);
+        mChartPopupView.hide(false);
+        LayoutParams layoutParams = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        layoutParams.setMargins(0, 0, 0, 0);
+        addView(mChartPopupView, layoutParams);
     }
 
     public void setGraph(@NonNull Graph graph) {
@@ -282,7 +292,7 @@ public class ChartView extends View {
         if (mTargetX != target) {
             if (target == INVALID_TARGET) {
                 hidePopup();
-            } else if (isShowingPopup()) {
+            } else if (mChartPopupView.isShowing()) {
                 updatePopup(target);
             } else {
                 showPopup(target);
@@ -295,31 +305,35 @@ public class ChartView extends View {
     }
 
     private void showPopup(long target) {
-        if (!isShowingPopup()) {
-            mChartPopup = new ChartPopup(getContext());
-            mChartPopup.bindData(mGraph.pointsAt(target));
-            mChartPopup.showAtLocation(this, (int) pointX(target), 0);
+        if (!mChartPopupView.isShowing()) {
+            mChartPopupView.show(true);
+            mChartPopupView.bindData(mGraph.pointsAt(target));
+            updatePopupPosition(target);
         }
     }
 
     private void updatePopup(long target) {
-        if (isShowingPopup()) {
-            int[] location = new int[2];
-            getLocationInWindow(location);
-            mChartPopup.bindData(mGraph.pointsAt(target));
-            mChartPopup.update(this, (int) pointX(target), 0);
+        if (mChartPopupView.isShowing()) {
+            mChartPopupView.bindData(mGraph.pointsAt(target));
+            updatePopupPosition(target);
         }
+    }
+
+    private void updatePopupPosition(long target) {
+        float x = pointX(target);
+        mChartPopupView.measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.AT_MOST),
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
+        int popupWidth = mChartPopupView.getMeasuredWidth();
+        float position = Math.max(0, Math.min(getWidth() - popupWidth, x - popupWidth / 2f));
+        mChartPopupView.setTranslationX(position);
     }
 
     private void hidePopup() {
-        if (isShowingPopup()) {
-            mChartPopup.dismiss();
+        if (mChartPopupView.isShowing()) {
+            mChartPopupView.hide(true);
         }
     }
 
-    private boolean isShowingPopup() {
-        return mChartPopup != null && mChartPopup.isShowing();
-    }
 
     private void drawLine(Canvas canvas, Line line) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -530,8 +544,8 @@ public class ChartView extends View {
         private long mXGridSize = -1;
         private long mYGridSize = -1;
 
-        private static  final  int X_GRID_COUNT = 6;
-        private static  final  int Y_GRID_COUNT = 4;
+        private static final int X_GRID_COUNT = 6;
+        private static final int Y_GRID_COUNT = 4;
 
 
         private void updateXGridSize(boolean animate) {

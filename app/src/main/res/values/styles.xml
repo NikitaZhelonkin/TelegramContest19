@@ -50,15 +50,12 @@
         <item name="thumbColor">@color/seekBarThumbColorNight</item>
     </style>
 
-    <style name="Popup" parent="Widget.AppCompat.PopupWindow">
-        <item name="android:popupBackground">@drawable/bg_popup</item>
-        <item name="android:dropDownHorizontalOffset">-21dp</item>
-        <item name="android:dropDownVerticalOffset">0dp</item>
-        <item name="android:popupAnimationStyle">@style/Animation.AppCompat.Tooltip</item>
+    <style name="Popup" parent="">
+        <item name="android:background">@drawable/bg_popup</item>
     </style>
 
     <style name="Popup.Night">
-        <item name="android:popupBackground">@drawable/bg_popup_night</item>
+        <item name="android:background">@drawable/bg_popup_night</item>
     </style>
 
     <style name="TextAppearance.Chart" parent="TextAppearance.AppCompat">
