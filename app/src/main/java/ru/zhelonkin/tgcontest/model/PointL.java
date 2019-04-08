@@ -1,6 +1,6 @@
 package ru.zhelonkin.tgcontest.model;
 
-public class PointL {
+public class PointL implements Comparable<PointL> {
 
     public long x;
     public long y;
@@ -16,6 +16,11 @@ public class PointL {
     @Override
     public String toString() {
         return "{" + x + "," + y + "}";
+    }
+
+    @Override
+    public int compareTo(PointL o) {
+        return Long.compare(x, o.x);
     }
 
 }

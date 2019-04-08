@@ -71,7 +71,7 @@ public class ChartView extends FrameLayout {
 
     private boolean mIsPreviewMode;
 
-    private long mTargetX = INVALID_TARGET;
+    private float mTargetX = INVALID_TARGET;
 
     private boolean mIsDragging;
 
@@ -240,10 +240,11 @@ public class ChartView extends FrameLayout {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (mGraph == null) return;
-        if (!mIsPreviewMode && mTargetX != INVALID_TARGET) drawX(canvas, pointX(mTargetX));
+        if (!mIsPreviewMode && mTargetX != INVALID_TARGET) drawX(canvas, mTargetX);
         for (Line line : mGraph.getLines()) {
             drawLine(canvas, line);
-            if (mTargetX != INVALID_TARGET && line.isVisible()) drawDots(canvas, line);
+
+            if (mTargetX != INVALID_TARGET && line.isVisible()) drawDot(canvas, line);
         }
         if (!mIsPreviewMode) drawYAxis(canvas);
         if (!mIsPreviewMode) drawXAxis(canvas);
@@ -268,7 +269,7 @@ public class ChartView extends FrameLayout {
                         attemptClaimDrag();
                     }
                 }
-                setTarget(findTargetX(Math.round(x)));
+                setTarget(x);
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
@@ -287,8 +288,15 @@ public class ChartView extends FrameLayout {
         }
     }
 
-    private void setTarget(long target) {
+    private void setTarget(float target) {
         if (mTargetX != target) {
+            if (!mGraph.hasVisibleLines()) {
+                target = INVALID_TARGET;
+            }
+            if (target != INVALID_TARGET) {
+                target = Math.max(pointX(mGraph.minX()), Math.min(pointX(mGraph.maxX()), target));
+            }
+
             if (target == INVALID_TARGET) {
                 hidePopup();
             } else if (mChartPopupView.isShowing()) {
@@ -296,34 +304,31 @@ public class ChartView extends FrameLayout {
             } else {
                 showPopup(target);
             }
-
             mTargetX = target;
             invalidate();
         }
-
     }
 
-    private void showPopup(long target) {
+    private void showPopup(float targetX) {
         if (!mChartPopupView.isShowing()) {
             mChartPopupView.show(true);
-            mChartPopupView.bindData(mGraph.pointsAt(target));
-            updatePopupPosition(target);
+            mChartPopupView.bindData(mGraph.pointsAt(valueX(targetX)));
+            updatePopupPosition(targetX);
         }
     }
 
-    private void updatePopup(long target) {
+    private void updatePopup(float targetX) {
         if (mChartPopupView.isShowing()) {
-            mChartPopupView.bindData(mGraph.pointsAt(target));
-            updatePopupPosition(target);
+            mChartPopupView.bindData(mGraph.pointsAt(valueX(targetX)));
+            updatePopupPosition(targetX);
         }
     }
 
-    private void updatePopupPosition(long target) {
-        float x = pointX(target);
+    private void updatePopupPosition(float x) {
         mChartPopupView.measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.AT_MOST),
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
         int popupWidth = mChartPopupView.getMeasuredWidth();
-        float position = Math.max(0, Math.min(getWidth() - popupWidth, x - popupWidth / 2f));
+        float position = Math.max(0, Math.min(chartWidth() - popupWidth, x - popupWidth / 2f));
         mChartPopupView.setTranslationX(position);
     }
 
@@ -346,14 +351,14 @@ public class ChartView extends FrameLayout {
         mLinePaint.setColor(line.getColor());
         mLinePaint.setAlpha(Alpha.toInt(line.getAlpha()));
 
-        PointL[] points = line.getPoints();
-        float[] lineBuffer = new float[points.length * 4];
-        float lastX = pointX(points[0].x);
-        float lastY = pointY(points[0].y);
+        List<PointL> points = line.getPoints();
+        float[] lineBuffer = new float[points.size() * 4];
+        float lastX = pointX(points.get(0).x);
+        float lastY = pointY(points.get(0).y);
         int j = 0;
-        for (int i = 1; i < points.length; i++) {
-            float x = pointX(points[i].x);
-            float y = pointY(points[i].y);
+        for (int i = 1; i < points.size(); i++) {
+            float x = pointX(points.get(i).x);
+            float y = pointY(points.get(i).y);
             lineBuffer[j++] = lastX;
             lineBuffer[j++] = lastY;
             lineBuffer[j++] = x;
@@ -368,32 +373,18 @@ public class ChartView extends FrameLayout {
         mLinePaint.setColor(line.getColor());
         mLinePaint.setAlpha(Alpha.toInt(line.getAlpha()));
         mLinePath.reset();
-        PointL[] points = line.getPoints();
-        mLinePath.moveTo(pointX(points[0].x), pointY(points[0].y));
-        for (int i = 1; i < points.length; i++) {
-            mLinePath.lineTo(pointX(points[i].x), pointY(points[i].y));
+        List<PointL> points = line.getPoints();
+        mLinePath.moveTo(pointX(points.get(0).x), pointY(points.get(0).y));
+        for (int i = 1; i < points.size(); i++) {
+            mLinePath.lineTo(pointX(points.get(i).x), pointY(points.get(i).y));
         }
         canvas.drawPath(mLinePath, mLinePaint);
     }
 
-    private void drawDots(Canvas canvas, Line line) {
+    private void drawDot(Canvas canvas, Line line) {
         mLinePaint.setColor(line.getColor());
-
-        PointL[] points = line.getPoints();
-        for (int i = 1; i < points.length; i++) {
-            float x = pointX(points[i].x);
-            float y = pointY(points[i].y);
-            if (points[i].x == mTargetX) {
-                drawDot(canvas, x, y);
-            }
-        }
-    }
-
-    private void drawX(Canvas canvas, float x) {
-        canvas.drawLine(x, getPaddingTop(), x, getHeight() - getPaddingBottom(), mGridPaint);
-    }
-
-    private void drawDot(Canvas canvas, float x, float y) {
+        float x = mTargetX;
+        float y = pointY(line.getY(valueX(x), false));
         int color = mLinePaint.getColor();
         mLinePaint.setColor(mSurfaceColor);
         mLinePaint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -401,6 +392,10 @@ public class ChartView extends FrameLayout {
         mLinePaint.setColor(color);
         mLinePaint.setStyle(Paint.Style.STROKE);
         canvas.drawCircle(x, y, mLinePaint.getStrokeWidth() * 2, mLinePaint);
+    }
+
+    private void drawX(Canvas canvas, float x) {
+        canvas.drawLine(x, getPaddingTop(), x, getHeight() - getPaddingBottom(), mGridPaint);
     }
 
     private void drawYAxis(Canvas canvas) {
@@ -413,7 +408,7 @@ public class ChartView extends FrameLayout {
                 mGridPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.2f));
                 canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
                 mTextPaint.setAlpha(Alpha.toInt(v.getAlpha()));
-                canvas.drawText(NUMBER_FORMATTER.format(v.value), 0, y-mTextPadding, mTextPaint);
+                canvas.drawText(NUMBER_FORMATTER.format(v.value), getPaddingLeft(), y - mTextPadding, mTextPaint);
             }
             mGridPaint.setAlpha(Alpha.toInt(0.2f));
         }
@@ -433,37 +428,13 @@ public class ChartView extends FrameLayout {
         mTextPaint.setAlpha(Alpha.toInt(1f));
     }
 
-
-    private Long findTargetX(float touchX) {
-        Line line = null;
-        for (Line l : mGraph.getLines()) {
-            if (l.isVisible()) {
-                line = l;
-                break;
-            }
-        }
-        if (line != null) {
-            float minDistance = Float.MAX_VALUE;
-            PointL targetP = null;
-            for (PointL p : line.getPoints()) {
-                float distance = Math.abs(pointX(p.x) - touchX);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    targetP = p;
-                }
-            }
-            return targetP != null ? targetP.x : INVALID_TARGET;
-        }
-        return INVALID_TARGET;
-    }
-
     private float[] calculateRangeY() {
         if (mGraph == null) return new float[]{0, 1};
         long minY = Long.MAX_VALUE;
         long maxY = Long.MIN_VALUE;
         for (Line line : mGraph.getLines()) {
             if (!line.isVisible()) continue;
-            PointL[] points = line.getPoints();
+            List<PointL> points = line.getPoints();
             for (PointL point : points) {
                 float x = pointX(point.x);
                 if (x >= 0 && x <= getWidth()) {
@@ -480,6 +451,10 @@ public class ChartView extends FrameLayout {
         result[0] = 0;//minY == Long.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
         result[1] = maxY == Long.MIN_VALUE ? 1 : (maxY - mGraph.minY()) / mGraph.rangeY();
         return result;
+    }
+
+    private long valueX(float pointX) {
+        return (long) ((pointX + mGraph.minX() * scaleX() - translationX() - getPaddingLeft()) / scaleX());
     }
 
     private float pointX(long x) {

@@ -57,7 +57,7 @@ public class ChartPopupView extends LinearLayout {
         if(animate){
             if(mIsShowing) return;
             animate().cancel();
-            animate().alpha(1).start();
+            animate().alpha(1).setDuration(200).start();
         }else {
             setAlpha(1);
         }
@@ -65,11 +65,10 @@ public class ChartPopupView extends LinearLayout {
     }
 
     public void  hide(boolean animate){
-
         if(animate){
             if(!mIsShowing) return;
             animate().cancel();
-            animate().alpha(0).start();
+            animate().alpha(0).setDuration(200).start();
         }else {
             setAlpha(0);
         }

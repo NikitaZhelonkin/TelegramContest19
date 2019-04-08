@@ -56,17 +56,17 @@ public class Graph {
     }
 
     private long calcMaxX() {
-        PointL[] points = mLines.get(0).getPoints();
-        return points[points.length - 1].x;
+        List<PointL> points = mLines.get(0).getPoints();
+        return points.get(points.size() - 1).x;
     }
 
     private long calcMinX() {
-        PointL[] points = mLines.get(0).getPoints();
-        return points[0].x;
+        List<PointL> points = mLines.get(0).getPoints();
+        return points.get(0).x;
     }
 
     private long calcMaxY() {
-        long maxY = mLines.get(0).getPoints()[0].y;
+        long maxY = mLines.get(0).getPoints().get(0).y;
         for (Line line : mLines) {
             for (PointL p : line.getPoints()) {
                 if (p.y > maxY) maxY = p.y;
@@ -77,7 +77,7 @@ public class Graph {
     }
 
     private long calcMinY() {
-        long minY = mLines.get(0).getPoints()[0].y;
+        long minY = mLines.get(0).getPoints().get(0).y;
         for (Line line : mLines) {
             for (PointL p : line.getPoints()) {
                 if (p.y < minY) minY = p.y;
@@ -87,14 +87,20 @@ public class Graph {
         return minY;
     }
 
+    public boolean hasVisibleLines(){
+        for (Line line : mLines) {
+            if(line.isVisible()) return true;
+        }
+        return false;
+    }
+
 
     public List<PointAndLine> pointsAt(long target) {
         List<PointAndLine> pointLList = new ArrayList<>();
         for (Line line : getLines()) {
             if (!line.isVisible()) continue;
-            for (PointL p : line.getPoints()) {
-                if (p.x == target) pointLList.add(new PointAndLine(p, line));
-            }
+            long y = line.getY(target, false);
+            pointLList.add(new PointAndLine(new PointL(target, y), line));
         }
         return pointLList;
     }

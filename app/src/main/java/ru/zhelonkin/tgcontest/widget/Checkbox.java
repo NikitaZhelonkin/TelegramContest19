@@ -17,8 +17,13 @@ import ru.zhelonkin.tgcontest.R;
 
 public class Checkbox extends CompoundButton implements TintableBackgroundView {
 
-
+    private Drawable mDrawable;
     private ColorStateList mTint;
+
+    private int mPaddingLeft = -1;
+    private int mPaddingRight = -1;
+
+    private boolean inited = false;
 
     public Checkbox(Context context) {
         super(context);
@@ -44,8 +49,16 @@ public class Checkbox extends CompoundButton implements TintableBackgroundView {
             setSupportBackgroundTintList(ColorStateList.valueOf(tint));
         }
         a.recycle();
+        mPaddingLeft = getPaddingLeft();
+        mPaddingRight = getPaddingRight();
+        inited = true;
     }
 
+    @Override
+    public void setButtonDrawable(@Nullable Drawable drawable) {
+        super.setButtonDrawable(drawable);
+        mDrawable = drawable;
+    }
 
     @Override
     public void setBackground(Drawable background) {
@@ -95,4 +108,22 @@ public class Checkbox extends CompoundButton implements TintableBackgroundView {
             drawable.invalidateSelf();
         }
     }
+
+    @Override
+    public void setPadding(int left, int top, int right, int bottom) {
+        super.setPadding(left, top, right, bottom);
+        mPaddingRight = right;
+        mPaddingLeft = left;
+    }
+
+    @Override
+    public void setChecked(boolean checked) {
+        super.setChecked(checked);
+        if (inited) {
+            super.setButtonDrawable(checked ? mDrawable : null);
+            int newPadding = (mPaddingLeft + mPaddingRight + mDrawable.getIntrinsicWidth()) / 2;
+            super.setPadding(checked ? mPaddingLeft : newPadding, getPaddingTop(), checked ? mPaddingRight : newPadding, getPaddingBottom());
+        }
+    }
+
 }
