@@ -64,12 +64,12 @@
 
     <style name="TextAppearance.Chart" parent="TextAppearance.AppCompat">
         <item name="android:textSize">12sp</item>
-        <item name="android:textColor">#8e8e93</item>
+        <item name="android:textColor">#252529</item>
 
     </style>
 
     <style name="TextAppearance.Chart.Night">
-        <item name="android:textColor">#707c8c</item>
+        <item name="android:textColor">#ECF2F8</item>
     </style>
 
     <style name="Checkbox">

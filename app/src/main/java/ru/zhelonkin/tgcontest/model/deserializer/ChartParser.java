@@ -13,19 +13,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
-import ru.zhelonkin.tgcontest.model.Line;
-import ru.zhelonkin.tgcontest.model.PointL;
+import ru.zhelonkin.tgcontest.model.Point;
 
-public class GraphParser {
+public class ChartParser {
 
-    public Graph parse(JSONObject jsonObject) throws JSONException {
+    public Chart parse(JSONObject jsonObject) throws JSONException {
         JSONArray columns = jsonObject.getJSONArray("columns");
         JSONObject types = jsonObject.getJSONObject("types");
         JSONObject names = jsonObject.getJSONObject("names");
         JSONObject colors = jsonObject.getJSONObject("colors");
 
         Map<String, List<Long>> columnMap = new HashMap<>();
+
+        List<String> columnsArray = new ArrayList<>();
 
         for (int i = 0; i < columns.length(); i++) {
             JSONArray values = columns.getJSONArray(i);
@@ -35,29 +37,34 @@ public class GraphParser {
                 valuesList.add(values.getLong(j));
             }
             columnMap.put(name, valuesList);
+            columnsArray.add(name);
         }
 
         Map<String, String> typeMap = parseAsMap(types);
         Map<String, String> namesMap = parseAsMap(names);
         Map<String, String> colorsMap = parseAsMap(colors);
 
-        List<Line> lines = new ArrayList<>();
+        List<Graph> graphs = new ArrayList<>();
         List<Long> xValues = columnMap.get("x");
 
-        for (String key : typeMap.keySet()) {
-            if ("line".equals(typeMap.get(key))) {
-                List<Long> yValues = columnMap.get(key);
-                String name = namesMap.get(key);
-                String color = colorsMap.get(key);
+        for(String column:columnsArray){
+            String type = typeMap.get(column);
+            if (!"x".equals(type)) {
+                List<Long> yValues = columnMap.get(column);
+                String name = namesMap.get(column);
+                String color = colorsMap.get(column);
 
                 if (xValues != null && yValues != null && name != null && color != null) {
-                    lines.add(new Line(mergeAsPoints(xValues, yValues), name, Color.parseColor(color)));
+                    graphs.add(new Graph(mergeAsPoints(xValues, yValues), type, name, Color.parseColor(color)));
                 } else {
-                    Log.e(GraphParser.class.getSimpleName(), "Invalid graph data");
+                    Log.e(ChartParser.class.getSimpleName(), "Invalid graph data");
                 }
             }
         }
-        return new Graph(lines);
+        boolean yScaled = jsonObject.optBoolean("y_scaled");
+        boolean stacked = jsonObject.optBoolean("stacked");
+        boolean percentage = jsonObject.optBoolean("percentage");
+        return new Chart(graphs, xValues, yScaled, stacked, percentage);
 
     }
 
@@ -71,13 +78,13 @@ public class GraphParser {
         return map;
     }
 
-    private PointL[] mergeAsPoints(List<Long> xValues, List<Long> yValues) throws JSONException {
+    private Point[] mergeAsPoints(List<Long> xValues, List<Long> yValues) throws JSONException {
         if (xValues.size() != yValues.size())
             throw new JSONException("x and y values have different sizes");
 
-        PointL[] points = new PointL[xValues.size()];
+        Point[] points = new Point[xValues.size()];
         for (int i = 0; i < xValues.size(); i++) {
-            points[i] = new PointL(xValues.get(i), yValues.get(i));
+            points[i] = new Point(xValues.get(i), yValues.get(i));
         }
         return points;
     }

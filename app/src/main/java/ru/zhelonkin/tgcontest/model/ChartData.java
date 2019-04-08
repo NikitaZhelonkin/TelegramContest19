@@ -4,13 +4,13 @@ import java.util.List;
 
 public class ChartData {
 
-    private List<Graph> mGraphs;
+    private List<Chart> mCharts;
 
-    public ChartData(List<Graph> graphs) {
-        mGraphs = graphs;
+    public ChartData(List<Chart> charts) {
+        mCharts = charts;
     }
 
-    public List<Graph> getGraphs() {
-        return mGraphs;
+    public List<Chart> getCharts() {
+        return mCharts;
     }
 }

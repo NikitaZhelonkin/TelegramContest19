@@ -9,12 +9,11 @@ import android.widget.TextView;
 
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.ViewUtils;
+import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.model.Graph;
-import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.widget.ChartView;
 import ru.zhelonkin.tgcontest.widget.DynamicFlowLayout;
-import ru.zhelonkin.tgcontest.widget.DynamicLinearLayout;
 import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolder> {
@@ -35,23 +34,22 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
 
     @Override
     public void onBindViewHolder(@NonNull ChartViewHolder chartViewHolder, int i) {
-        chartViewHolder.bindView(mChartData.getGraphs().get(i), i);
+        chartViewHolder.bindView(mChartData.getCharts().get(i), i);
     }
 
     @Override
     public int getItemCount() {
-        return mChartData == null ? 0 : mChartData.getGraphs().size();
+        return mChartData == null ? 0 : mChartData.getCharts().size();
     }
 
     class ChartViewHolder extends RecyclerView.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
-            LinesAdapter.OnCheckChangedListener {
+            GraphAdapter.OnCheckChangedListener {
 
         private TextView titleView;
         private ChartView chartView;
         private ChartView chartPreview;
         private RangeSeekBar rangeSeekBar;
-        private LinesAdapter linesAdapter;
-
+        private GraphAdapter mGraphAdapter;
 
         ChartViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -61,31 +59,31 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             rangeSeekBar = itemView.findViewById(R.id.rangeBar);
             rangeSeekBar.setOnRangeSeekBarChangeListener(this);
             DynamicFlowLayout linesLayout = itemView.findViewById(R.id.line_list_layout);
-            linesLayout.setAdapter(linesAdapter = new LinesAdapter());
-            linesAdapter.setOnCheckChangedListener(this);
+            linesLayout.setAdapter(mGraphAdapter = new GraphAdapter());
+            mGraphAdapter.setOnCheckChangedListener(this);
         }
 
-        void bindView(Graph graph, int position) {
-            chartView.setGraph(graph);
-            chartPreview.setGraph(graph);
-            linesAdapter.setGraph(graph);
+        void bindView(Chart chart, int position) {
+            chartView.setChart(chart);
+            chartPreview.setChart(chart);
+            mGraphAdapter.setChart(chart);
             titleView.setText(itemView.getContext().getString(R.string.chart_title, position + 1));
 
             ViewUtils.onPreDraw(chartView, () -> {
-                rangeSeekBar.setValues(graph.left, graph.right);
+                rangeSeekBar.setValues(chart.left, chart.right);
             });
         }
 
         @Override
         public void onRangeChanged(float leftValue, float rightValue, boolean fromUser) {
-            Graph graph = mChartData.getGraphs().get(getAdapterPosition());
-            graph.left = leftValue;
-            graph.right = rightValue;
-            chartView.setChartLeftAndRight(graph.left / 100f, graph.right / 100f, fromUser);
+            Chart chart = mChartData.getCharts().get(getAdapterPosition());
+            chart.left = leftValue;
+            chart.right = rightValue;
+            chartView.setChartLeftAndRight(chart.left / 100f, chart.right / 100f, fromUser);
         }
 
         @Override
-        public void onCheckChanged(Line line, boolean checked) {
+        public void onCheckChanged(Graph graph, boolean checked) {
             chartView.updateGraphLines();
             chartPreview.updateGraphLines();
         }

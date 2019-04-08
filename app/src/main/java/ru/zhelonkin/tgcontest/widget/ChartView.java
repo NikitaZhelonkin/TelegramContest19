@@ -34,18 +34,20 @@ import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.NumberFormatter;
+import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
-import ru.zhelonkin.tgcontest.model.Line;
-import ru.zhelonkin.tgcontest.model.PointL;
+import ru.zhelonkin.tgcontest.model.Point;
 
 public class ChartView extends FrameLayout {
 
     private final Formatter DATE_FORMATTER = new CachingFormatter(new DateFormatter("MMM dd"));
     private final Formatter NUMBER_FORMATTER = new CachingFormatter(new NumberFormatter());
 
-    private static final long INVALID_TARGET = -1L;
+    private static final int INVALID_TARGET = -1;
 
-    private Graph mGraph;
+    private Chart mChart;
+
+    private float[] mStackBuffer;
 
     private Axises mAxises;
 
@@ -61,17 +63,18 @@ public class ChartView extends FrameLayout {
 
     private AnimatorSet mLineAlphaAnimator;
 
-    private Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint mGraphPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint mGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private TextPaint mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
-    private Path mLinePath = new Path();
+    private Path mGraphPath = new Path();
 
     private int mSurfaceColor;
 
     private boolean mIsPreviewMode;
 
-    private float mTargetX = INVALID_TARGET;
+    private int mTargetPosition = INVALID_TARGET;
 
     private boolean mIsDragging;
 
@@ -116,12 +119,10 @@ public class ChartView extends FrameLayout {
         int textAppearance = a.getResourceId(R.styleable.ChartView_textAppearance, -1);
         a.recycle();
 
-        setLayerType(LAYER_TYPE_HARDWARE, null);
-
-        mLinePaint.setStrokeWidth(lineWidth);
-        mLinePaint.setStyle(Paint.Style.STROKE);
-        mLinePaint.setStrokeCap(Paint.Cap.SQUARE);
-        mLinePaint.setStrokeJoin(Paint.Join.ROUND);
+        mGraphPaint.setStrokeWidth(lineWidth);
+        mGraphPaint.setStyle(Paint.Style.STROKE);
+        mGraphPaint.setStrokeCap(Paint.Cap.SQUARE);
+        mGraphPaint.setStrokeJoin(Paint.Join.ROUND);
 
         mGridPaint.setStrokeWidth(lineWidth / 2f);
         mGridPaint.setColor(gridColor);
@@ -144,9 +145,10 @@ public class ChartView extends FrameLayout {
         addView(mChartPopupView, layoutParams);
     }
 
-    public void setGraph(@NonNull Graph graph) {
-        mGraph = graph;
+    public void setChart(@NonNull Chart chart) {
+        mChart = chart;
         mAxises = new Axises();
+        mStackBuffer = new float[chart.getXValues().size()];
         float[] range = calculateRangeY();
         setChartTopAndBottom(range[1], range[0], false);
         invalidate();
@@ -154,18 +156,19 @@ public class ChartView extends FrameLayout {
 
 
     public void updateGraphLines() {
+        if (mChart == null) return;
         float[] range = calculateRangeY();
         setChartTopAndBottom(range[1], range[0], true);
 
         if (mLineAlphaAnimator != null) mLineAlphaAnimator.cancel();
         List<Animator> animatorList = new ArrayList<>();
-        for (Line line : mGraph.getLines()) {
-            if (line.isVisible() && line.getAlpha() != 1) {
-                ObjectAnimator animator = ObjectAnimator.ofFloat(line, "alpha", 1);
+        for (Graph graph : mChart.getGraphs()) {
+            if (graph.isVisible() && graph.getAlpha() != 1) {
+                ObjectAnimator animator = ObjectAnimator.ofFloat(graph, "alpha", 1);
                 animator.addUpdateListener(animation -> invalidate());
                 animatorList.add(animator);
-            } else if (!line.isVisible() && line.getAlpha() != 0) {
-                ObjectAnimator animator = ObjectAnimator.ofFloat(line, "alpha", 0);
+            } else if (!graph.isVisible() && graph.getAlpha() != 0) {
+                ObjectAnimator animator = ObjectAnimator.ofFloat(graph, "alpha", 0);
                 animator.addUpdateListener(animation -> invalidate());
                 animatorList.add(animator);
             }
@@ -180,6 +183,7 @@ public class ChartView extends FrameLayout {
 
 
     public void setChartLeftAndRight(float left, float right, boolean animate) {
+        if (mChart == null) return;
         mChartLeft = left;
         mChartRight = right;
         float[] range = calculateRangeY();
@@ -239,12 +243,14 @@ public class ChartView extends FrameLayout {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (mGraph == null) return;
-        if (!mIsPreviewMode && mTargetX != INVALID_TARGET) drawX(canvas, mTargetX);
-        for (Line line : mGraph.getLines()) {
-            drawLine(canvas, line);
+        if (mChart == null) return;
+        for (int i = 0; i < mStackBuffer.length; i++) {
+            mStackBuffer[i] = 0;
+        }
+        if (!mIsPreviewMode && mTargetPosition != INVALID_TARGET) drawX(canvas, pointX(mChart.getXValues().get(mTargetPosition)));
+        for (Graph graph : mChart.getGraphs()) {
+            drawGraph(canvas, graph);
 
-            if (mTargetX != INVALID_TARGET && line.isVisible()) drawDot(canvas, line);
         }
         if (!mIsPreviewMode) drawYAxis(canvas);
         if (!mIsPreviewMode) drawXAxis(canvas);
@@ -253,7 +259,7 @@ public class ChartView extends FrameLayout {
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (!isEnabled() || mIsPreviewMode)
+        if (!isEnabled() || mIsPreviewMode || mChart == null)
             return false;
 
         final int action = event.getAction();
@@ -269,7 +275,7 @@ public class ChartView extends FrameLayout {
                         attemptClaimDrag();
                     }
                 }
-                setTarget(x);
+                setTarget(mChart.findTargetPosition(valueX(x)));
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
@@ -288,15 +294,11 @@ public class ChartView extends FrameLayout {
         }
     }
 
-    private void setTarget(float target) {
-        if (mTargetX != target) {
-            if (!mGraph.hasVisibleLines()) {
+    private void setTarget(int target) {
+        if (mTargetPosition != target) {
+            if (!mChart.hasVisibleGraphs()) {
                 target = INVALID_TARGET;
             }
-            if (target != INVALID_TARGET) {
-                target = Math.max(pointX(mGraph.minX()), Math.min(pointX(mGraph.maxX()), target));
-            }
-
             if (target == INVALID_TARGET) {
                 hidePopup();
             } else if (mChartPopupView.isShowing()) {
@@ -304,27 +306,28 @@ public class ChartView extends FrameLayout {
             } else {
                 showPopup(target);
             }
-            mTargetX = target;
+            mTargetPosition = target;
             invalidate();
         }
     }
 
-    private void showPopup(float targetX) {
+    private void showPopup(int targetPosition) {
         if (!mChartPopupView.isShowing()) {
             mChartPopupView.show(true);
-            mChartPopupView.bindData(mGraph.pointsAt(valueX(targetX)));
-            updatePopupPosition(targetX);
+            mChartPopupView.bindData(mChart.pointsAt(targetPosition));
+            updatePopupPosition(targetPosition);
         }
     }
 
-    private void updatePopup(float targetX) {
+    private void updatePopup(int targetPosition) {
         if (mChartPopupView.isShowing()) {
-            mChartPopupView.bindData(mGraph.pointsAt(valueX(targetX)));
-            updatePopupPosition(targetX);
+            mChartPopupView.bindData(mChart.pointsAt(targetPosition));
+            updatePopupPosition(targetPosition);
         }
     }
 
-    private void updatePopupPosition(float x) {
+    private void updatePopupPosition(int targetPosition) {
+        float x = pointX(mChart.getXValues().get(targetPosition));
         mChartPopupView.measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.AT_MOST),
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
         int popupWidth = mChartPopupView.getMeasuredWidth();
@@ -339,19 +342,31 @@ public class ChartView extends FrameLayout {
     }
 
 
-    private void drawLine(Canvas canvas, Line line) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            drawLineWithPath(canvas, line);
-        } else {
-            drawLineDefault(canvas, line);
+    private void drawGraph(Canvas canvas, Graph graph) {
+        mGraphPaint.setColor(graph.getColor());
+        mGraphPaint.setAlpha(Alpha.toInt(graph.getAlpha()));
+
+        if (Graph.TYPE_LINE.equals(graph.getType())) {
+            drawLineGraph(canvas, graph);
+        } else if (Graph.TYPE_BAR.equals(graph.getType())) {
+            drawBarGraph(canvas, graph);
+        } else if (Graph.TYPE_AREA.equals(graph.getType())) {
+            drawAreaGraph(canvas, graph);
         }
     }
 
-    private void drawLineDefault(Canvas canvas, Line line) {
-        mLinePaint.setColor(line.getColor());
-        mLinePaint.setAlpha(Alpha.toInt(line.getAlpha()));
+    private void drawLineGraph(Canvas canvas, Graph graph) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            drawLineWithPath(canvas, graph);
+        } else {
+            drawLineDefault(canvas, graph);
+        }
+        if (mTargetPosition != INVALID_TARGET && graph.isVisible())
+            drawDot(canvas, graph);
+    }
 
-        List<PointL> points = line.getPoints();
+    private void drawLineDefault(Canvas canvas, Graph graph) {
+        List<Point> points = graph.getPoints();
         float[] lineBuffer = new float[points.size() * 4];
         float lastX = pointX(points.get(0).x);
         float lastY = pointY(points.get(0).y);
@@ -366,32 +381,72 @@ public class ChartView extends FrameLayout {
             lastX = x;
             lastY = y;
         }
-        canvas.drawLines(lineBuffer, mLinePaint);
+        canvas.drawLines(lineBuffer, mGraphPaint);
     }
 
-    private void drawLineWithPath(Canvas canvas, Line line) {
-        mLinePaint.setColor(line.getColor());
-        mLinePaint.setAlpha(Alpha.toInt(line.getAlpha()));
-        mLinePath.reset();
-        List<PointL> points = line.getPoints();
-        mLinePath.moveTo(pointX(points.get(0).x), pointY(points.get(0).y));
+    private void drawLineWithPath(Canvas canvas, Graph graph) {
+        mGraphPath.reset();
+        List<Point> points = graph.getPoints();
+        mGraphPath.moveTo(pointX(points.get(0).x), pointY(points.get(0).y));
         for (int i = 1; i < points.size(); i++) {
-            mLinePath.lineTo(pointX(points.get(i).x), pointY(points.get(i).y));
+            mGraphPath.lineTo(pointX(points.get(i).x), pointY(points.get(i).y));
         }
-        canvas.drawPath(mLinePath, mLinePaint);
+        canvas.drawPath(mGraphPath, mGraphPaint);
     }
 
-    private void drawDot(Canvas canvas, Line line) {
-        mLinePaint.setColor(line.getColor());
-        float x = mTargetX;
-        float y = pointY(line.getY(valueX(x), false));
-        int color = mLinePaint.getColor();
-        mLinePaint.setColor(mSurfaceColor);
-        mLinePaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        canvas.drawCircle(x, y, mLinePaint.getStrokeWidth() * 2, mLinePaint);
-        mLinePaint.setColor(color);
-        mLinePaint.setStyle(Paint.Style.STROKE);
-        canvas.drawCircle(x, y, mLinePaint.getStrokeWidth() * 2, mLinePaint);
+
+    private void drawBarGraph(Canvas canvas, Graph graph) {
+        mBarPaint.setStyle(Paint.Style.STROKE);
+        mBarPaint.setColor(graph.getColor());
+        List<Point> points = graph.getPoints();
+        float first = pointX(points.get(0).x);
+        float last = pointX(points.get(points.size() - 1).x);
+        float width = (last - first) / points.size()+0.5f;
+        mBarPaint.setStrokeWidth(width);
+        float[] lineBuffer = new float[points.size() * 4];
+        int j = 0;
+        for (int i = 0; i < points.size(); i++) {
+            float startX = pointX(points.get(i).x);
+            float height = (getHeight() - getPaddingBottom() - pointY(points.get(i).y)) * graph.getAlpha();
+            float endY = mStackBuffer[i] == 0 ? getHeight() - getPaddingBottom() : mStackBuffer[i];
+            float startY = endY - height;
+            lineBuffer[j++] = startX;
+            lineBuffer[j++] = startY;
+            lineBuffer[j++] = startX;
+            lineBuffer[j++] = endY;
+            mStackBuffer[i] = mChart.isStacked() ? startY : 0;
+        }
+
+        mBarPaint.setAlpha(Alpha.toInt(mTargetPosition == INVALID_TARGET ? 1 : 0.8f));
+        canvas.drawLines(lineBuffer, mBarPaint);
+
+        if (mTargetPosition != INVALID_TARGET) {
+            mBarPaint.setAlpha(Alpha.toInt(1));
+            float startX = lineBuffer[mTargetPosition * 4];
+            float startY = lineBuffer[mTargetPosition * 4 + 1];
+            float endX = lineBuffer[mTargetPosition * 4 + 2];
+            float endY = lineBuffer[mTargetPosition * 4 + 3];
+            canvas.drawLine(startX, startY, endX, endY, mBarPaint);
+        }
+    }
+
+    private void drawAreaGraph(Canvas canvas, Graph graph) {
+        //TODO draw area
+        drawLineGraph(canvas, graph);
+    }
+
+    private void drawDot(Canvas canvas, Graph graph) {
+        mGraphPaint.setColor(graph.getColor());
+        Point point = graph.getPoints().get(mTargetPosition);
+        float x = pointX(point.x);
+        float y = pointY(point.y);
+        int color = mGraphPaint.getColor();
+        mGraphPaint.setColor(mSurfaceColor);
+        mGraphPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        canvas.drawCircle(x, y, mGraphPaint.getStrokeWidth() * 2, mGraphPaint);
+        mGraphPaint.setColor(color);
+        mGraphPaint.setStyle(Paint.Style.STROKE);
+        canvas.drawCircle(x, y, mGraphPaint.getStrokeWidth() * 2, mGraphPaint);
     }
 
     private void drawX(Canvas canvas, float x) {
@@ -405,12 +460,12 @@ public class ChartView extends FrameLayout {
             Axises.Value v = mAxises.mYValues.get(index);
             float y = pointY(v.value);
             if (v.getAlpha() != 0) {
-                mGridPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.2f));
+                mGridPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.1f));
                 canvas.drawLine(getPaddingLeft(), y, getWidth() - getPaddingRight(), y, mGridPaint);
-                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha()));
+                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.5f));
                 canvas.drawText(NUMBER_FORMATTER.format(v.value), getPaddingLeft(), y - mTextPadding, mTextPaint);
             }
-            mGridPaint.setAlpha(Alpha.toInt(0.2f));
+            mGridPaint.setAlpha(Alpha.toInt(0.1f));
         }
         canvas.restoreToCount(count);
     }
@@ -421,21 +476,22 @@ public class ChartView extends FrameLayout {
             Axises.Value v = mAxises.mXValues.get(index);
             float x = pointX(v.value);
             if (v.getAlpha() != 0) {
-                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha()));
+                mTextPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.5f));
                 canvas.drawText(DATE_FORMATTER.format(v.value), x, getHeight() - mTextPaint.descent(), mTextPaint);
             }
         }
-        mTextPaint.setAlpha(Alpha.toInt(1f));
     }
 
     private float[] calculateRangeY() {
-        if (mGraph == null) return new float[]{0, 1};
+        if (mChart == null) return new float[]{0, 1};
         long minY = Long.MAX_VALUE;
         long maxY = Long.MIN_VALUE;
-        for (Line line : mGraph.getLines()) {
-            if (!line.isVisible()) continue;
-            List<PointL> points = line.getPoints();
-            for (PointL point : points) {
+        long[] sumArr = new long[mChart.getXValues().size()];
+        for (Graph graph : mChart.getGraphs()) {
+            if (!graph.isVisible()) continue;
+            List<Point> points = graph.getPoints();
+            for (int i = 0; i < points.size(); i++) {
+                Point point = points.get(i);
                 float x = pointX(point.x);
                 if (x >= 0 && x <= getWidth()) {
                     if (point.y < minY) {
@@ -444,41 +500,50 @@ public class ChartView extends FrameLayout {
                     if (point.y > maxY) {
                         maxY = point.y;
                     }
+                    sumArr[i] += point.y;
                 }
+
+            }
+        }
+        if (mChart.isStacked()) {
+            //find max sum
+            for (long sum : sumArr) {
+                if (sum > maxY) maxY = sum;
             }
         }
         float[] result = new float[2];
-        result[0] = 0;//minY == Long.MAX_VALUE ? 0 : (minY - mGraph.minY()) / mGraph.rangeY();
-        result[1] = maxY == Long.MIN_VALUE ? 1 : (maxY - mGraph.minY()) / mGraph.rangeY();
+        result[0] = 0;//minY == Long.MAX_VALUE ? 0 : (minY - mChart.minY()) / mChart.rangeY();
+        result[1] = maxY == Long.MIN_VALUE ? 1 : (maxY - mChart.minY()) / mChart.rangeY();
         return result;
     }
 
     private long valueX(float pointX) {
-        return (long) ((pointX + mGraph.minX() * scaleX() - translationX() - getPaddingLeft()) / scaleX());
+        return (long) ((pointX + mChart.minX() * scaleX() - translationX() - getPaddingLeft()) / scaleX());
     }
 
     private float pointX(long x) {
-        return getPaddingLeft() + (x - mGraph.minX()) * scaleX() + translationX();
+        return getPaddingLeft() + (x - mChart.minX()) * scaleX() + translationX();
     }
 
     private float pointY(long y) {
-        return getHeight() - getPaddingBottom() - (y - mGraph.minY()) * scaleY() + translationY();
+        return getHeight() - getPaddingBottom() - (y - mChart.minY()) * scaleY() + translationY();
     }
 
+
     private float translationX() {
-        return -mGraph.rangeX() * scaleX() * mChartLeft;
+        return -mChart.rangeX() * scaleX() * mChartLeft;
     }
 
     private float translationY() {
-        return mGraph.rangeY() * scaleY() * mChartBottom;
+        return mChart.rangeY() * scaleY() * mChartBottom;
     }
 
     private float scaleX() {
-        return chartWidth() / mGraph.rangeX() * 1 / chartScaleX();
+        return chartWidth() / mChart.rangeX() * 1 / chartScaleX();
     }
 
     private float scaleY() {
-        return chartHeight() / mGraph.rangeY() * 1 / chartScaleY();
+        return chartHeight() / mChart.rangeY() * 1 / chartScaleY();
     }
 
     private float chartScaleX() {
@@ -497,6 +562,23 @@ public class ChartView extends FrameLayout {
         return getHeight() - getPaddingTop() - getPaddingBottom();
     }
 
+    //target values for animation
+    private float targetPointY(long y) {
+        return getHeight() - getPaddingBottom() - (y - mChart.minY()) * targetScaleY() + targetTranslationY();
+    }
+
+    private float targetTranslationY() {
+        return mChart.rangeY() * targetScaleY() * mTargetChartBottom;
+    }
+
+    private float targetScaleY() {
+        return chartHeight() / mChart.rangeY() * 1 / targetChartScaleY();
+    }
+
+    private float targetChartScaleY() {
+        return mTargetChartTop - mTargetChartBottom;
+    }
+
 
     private class Axises {
 
@@ -504,25 +586,24 @@ public class ChartView extends FrameLayout {
         Map<Long, Value> mXValues = new HashMap<>();
 
         private long mXGridSize = -1;
-        private long mYGridSize = -1;
 
         private static final int X_GRID_COUNT = 6;
         private static final int Y_GRID_COUNT = 4;
 
 
         private void updateXGridSize(boolean animate) {
-            if (mGraph == null || mIsPreviewMode) return;
-            long rangeY = (long) (chartScaleX() * (long) mGraph.rangeX());
+            if (mChart == null || mIsPreviewMode) return;
+            long rangeY = (long) (chartScaleX() * (long) mChart.rangeX());
             long gridSize = calcXGridSize(rangeY, X_GRID_COUNT);
             if (mXGridSize == gridSize) return;
             mXGridSize = gridSize;
             for (Long index : mXValues.keySet()) {
                 Value v = mXValues.get(index);
                 if (v != null) {
-                    v.setVisible((index - mGraph.minX()) % gridSize == 0, animate);
+                    v.setVisible((index - mChart.minX()) % gridSize == 0, animate);
                 }
             }
-            for (long i = mGraph.minX(); i < mGraph.maxX(); i += gridSize) {
+            for (long i = mChart.minX(); i < mChart.maxX(); i += gridSize) {
                 if (!mXValues.containsKey(i)) {
                     Value value = new Value(i);
                     mXValues.put(value.value, value);
@@ -533,20 +614,20 @@ public class ChartView extends FrameLayout {
 
 
         private void updateYGridSize(boolean animate) {
-            if (mGraph == null || mIsPreviewMode) return;
-            long rangeY = (long) ((mTargetChartTop - mTargetChartBottom) * mGraph.rangeY());
+            if (mChart == null || mIsPreviewMode) return;
+            long rangeY = (long) ((mTargetChartTop - mTargetChartBottom) * mChart.rangeY());
             long gridSize = calcYGridSize(rangeY, Y_GRID_COUNT);
-            if (mYGridSize == gridSize) return;
-            mYGridSize = gridSize;
 
             for (Long index : mYValues.keySet()) {
                 Value v = mYValues.get(index);
                 if (v != null) {
-                    v.setVisible((index - mGraph.minY()) % gridSize == 0, animate);
+                    boolean targetVisible = targetPointY(v.value) > 0;
+                    v.setVisible(targetVisible && (index - mChart.minY()) % gridSize == 0, animate);
                 }
             }
-            for (long i = mGraph.minY(); i < mGraph.maxY(); i += gridSize) {
-                if (!mYValues.containsKey(i)) {
+            for (long i = mChart.minY(); i < mChart.maxY(); i += gridSize) {
+                boolean targetVisible = targetPointY(i) > 0;
+                if (!mYValues.containsKey(i) && targetVisible) {
                     Value value = new Value(i);
                     mYValues.put(i, value);
                     value.setVisible(true, animate);

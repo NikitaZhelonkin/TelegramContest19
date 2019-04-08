@@ -1,118 +1,67 @@
 package ru.zhelonkin.tgcontest.model;
 
-import androidx.annotation.NonNull;
-
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import androidx.annotation.Keep;
 
 public class Graph {
 
-    private List<Line> mLines;
+    public static final String TYPE_LINE = "line";
+    public static final String TYPE_BAR = "bar";
+    public static final String TYPE_AREA = "area";
 
-    private long mMinX;
-    private long mMaxX;
-    private long mMinY;
-    private long mMaxY;
+    private final List<Point> mPoints;
+    private final String mType;
+    private final String mName;
+    private final int mColor;
 
-    public float left = 70f;
-    public float right = 100f;
+    private boolean mVisible;
+    private float mAlpha;
 
-    public Graph(@NonNull List<Line> lines) {
-        mLines = lines;
-        mMinX = calcMinX();
-        mMaxX = calcMaxX();
-        mMinY = 0;//calcMinY();
-        mMaxY = calcMaxY();
+    public Graph(Point[] points, String type, String name, int color) {
+        mPoints = new ArrayList<>(Arrays.asList(points));
+        mType = type;
+        mName = name;
+        mColor = color;
+        mVisible = true;
+        mAlpha = 1f;
     }
 
-
-    @NonNull
-    public List<Line> getLines() {
-        return mLines;
+    public String getType() {
+        return mType;
     }
 
-    public long minX() {
-        return mMinX;
+    public List<Point> getPoints() {
+        return mPoints;
     }
 
-    public long maxX() {
-        return mMaxX;
+    public String getName() {
+        return mName;
     }
 
-    public long minY() {
-        return mMinY;
+    public int getColor() {
+        return mColor;
     }
 
-    public long maxY() {
-        return mMaxY;
+    @Keep
+    public void setAlpha(float alpha) {
+        mAlpha = alpha;
     }
 
-    public float rangeX() {
-        return Math.abs(mMaxX - mMinX);
+    @Keep
+    public float getAlpha() {
+        return mAlpha;
     }
 
-    public float rangeY() {
-        return Math.abs(mMaxY - mMinY);
+    public void setVisible(boolean visible) {
+        mVisible = visible;
     }
 
-    private long calcMaxX() {
-        List<PointL> points = mLines.get(0).getPoints();
-        return points.get(points.size() - 1).x;
-    }
-
-    private long calcMinX() {
-        List<PointL> points = mLines.get(0).getPoints();
-        return points.get(0).x;
-    }
-
-    private long calcMaxY() {
-        long maxY = mLines.get(0).getPoints().get(0).y;
-        for (Line line : mLines) {
-            for (PointL p : line.getPoints()) {
-                if (p.y > maxY) maxY = p.y;
-
-            }
-        }
-        return maxY;
-    }
-
-    private long calcMinY() {
-        long minY = mLines.get(0).getPoints().get(0).y;
-        for (Line line : mLines) {
-            for (PointL p : line.getPoints()) {
-                if (p.y < minY) minY = p.y;
-
-            }
-        }
-        return minY;
-    }
-
-    public boolean hasVisibleLines(){
-        for (Line line : mLines) {
-            if(line.isVisible()) return true;
-        }
-        return false;
-    }
-
-
-    public List<PointAndLine> pointsAt(long target) {
-        List<PointAndLine> pointLList = new ArrayList<>();
-        for (Line line : getLines()) {
-            if (!line.isVisible()) continue;
-            long y = line.getY(target, false);
-            pointLList.add(new PointAndLine(new PointL(target, y), line));
-        }
-        return pointLList;
-    }
-
-    public class PointAndLine {
-        public PointL point;
-        public Line line;
-
-        PointAndLine(PointL point, Line line) {
-            this.point = point;
-            this.line = line;
-        }
+    public boolean isVisible() {
+        return mVisible;
     }
 
 }

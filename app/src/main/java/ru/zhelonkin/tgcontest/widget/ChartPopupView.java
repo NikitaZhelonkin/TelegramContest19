@@ -17,7 +17,7 @@ import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.SimpleNumberFormatter;
-import ru.zhelonkin.tgcontest.model.Graph;
+import ru.zhelonkin.tgcontest.model.Chart;
 
 public class ChartPopupView extends LinearLayout {
 
@@ -49,8 +49,6 @@ public class ChartPopupView extends LinearLayout {
         DynamicLinearLayout valuesLayout = v.findViewById(R.id.values_layout);
         valuesLayout.setAdapter(mAdapter = new ChartPopupView.Adapter());
         setOrientation(VERTICAL);
-
-
     }
 
     public void show(boolean animate){
@@ -64,7 +62,7 @@ public class ChartPopupView extends LinearLayout {
         mIsShowing = true;
     }
 
-    public void  hide(boolean animate){
+    public void hide(boolean animate){
         if(animate){
             if(!mIsShowing) return;
             animate().cancel();
@@ -79,7 +77,7 @@ public class ChartPopupView extends LinearLayout {
         return mIsShowing;
     }
 
-    void bindData(List<Graph.PointAndLine> points) {
+    void bindData(List<Chart.PointAndGraph> points) {
         if (points.size() == 0) return;
         mXValueView.setText(mDateFormatter.format(points.get(0).point.x));
         mAdapter.setData(points);
@@ -89,16 +87,16 @@ public class ChartPopupView extends LinearLayout {
 
         private Formatter mValueFormatter = new SimpleNumberFormatter();
 
-        private List<Graph.PointAndLine> mPointAndLines;
+        private List<Chart.PointAndGraph> mPointAndGraphs;
 
-        void setData(List<Graph.PointAndLine> pointAndLines) {
-            mPointAndLines = pointAndLines;
+        void setData(List<Chart.PointAndGraph> pointAndGraphs) {
+            mPointAndGraphs = pointAndGraphs;
             notifyDataChanged();
         }
 
         @Override
         public int getCount() {
-            return mPointAndLines == null ? 0 : mPointAndLines.size();
+            return mPointAndGraphs == null ? 0 : mPointAndGraphs.size();
         }
 
         @Override
@@ -109,10 +107,10 @@ public class ChartPopupView extends LinearLayout {
 
         @Override
         protected void onBindViewHolder(ChartPopupView.Adapter.ViewHolder viewHolder, int position, Object payload) {
-            Graph.PointAndLine pointAndLine = mPointAndLines.get(position);
-            viewHolder.lineNameView.setText("Label "+pointAndLine.line.getName());
-            viewHolder.valueView.setTextColor(pointAndLine.line.getColor());
-            viewHolder.valueView.setText(mValueFormatter.format(pointAndLine.point.y));
+            Chart.PointAndGraph pointAndGraph = mPointAndGraphs.get(position);
+            viewHolder.lineNameView.setText(pointAndGraph.mGraph.getName());
+            viewHolder.valueView.setTextColor(pointAndGraph.mGraph.getColor());
+            viewHolder.valueView.setText(mValueFormatter.format(pointAndGraph.point.y));
         }
 
         class ViewHolder extends DynamicViewDelegate.ViewHolder {

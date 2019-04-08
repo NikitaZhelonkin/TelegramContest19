@@ -9,29 +9,29 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import ru.zhelonkin.tgcontest.R;
+import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
-import ru.zhelonkin.tgcontest.model.Line;
 import ru.zhelonkin.tgcontest.widget.Checkbox;
 import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
 
-public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewHolder> {
+public class GraphAdapter extends DynamicViewDelegate.Adapter<GraphAdapter.ViewHolder> {
 
     public interface OnCheckChangedListener {
-        void onCheckChanged(Line line, boolean checked);
+        void onCheckChanged(Graph graph, boolean checked);
     }
 
-    private Graph mGraph;
+    private Chart mChart;
 
     private OnCheckChangedListener mOnCheckChangedListener;
 
-    public void setGraph(Graph graph) {
-        mGraph = graph;
+    public void setChart(Chart chart) {
+        mChart = chart;
         notifyDataChanged();
     }
 
     @Override
     public int getCount() {
-        return mGraph == null ? 0 : mGraph.getLines().size();
+        return mChart == null ? 0 : mChart.getGraphs().size();
     }
 
     public void setOnCheckChangedListener(OnCheckChangedListener onCheckChangedListener) {
@@ -41,12 +41,12 @@ public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewH
     @Override
     protected ViewHolder onCreateViewHolder(ViewGroup parent) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        return new ViewHolder(inflater.inflate(R.layout.list_item_line, parent, false));
+        return new ViewHolder(inflater.inflate(R.layout.list_item_graph, parent, false));
     }
 
     @Override
     protected void onBindViewHolder(ViewHolder viewHolder, int position, Object payload) {
-        viewHolder.bind(mGraph.getLines().get(position));
+        viewHolder.bind(mChart.getGraphs().get(position));
     }
 
     class ViewHolder extends DynamicViewDelegate.ViewHolder {
@@ -58,21 +58,21 @@ public class LinesAdapter extends DynamicViewDelegate.Adapter<LinesAdapter.ViewH
             mCheckBox = itemView.findViewById(R.id.checkbox);
         }
 
-        void bind(Line line) {
-            mCheckBox.setText("Label " + line.getName());
+        void bind(Graph graph) {
+            mCheckBox.setText(graph.getName());
             ColorStateList colorStateList = new ColorStateList(new int[][]{
                     new int[]{android.R.attr.state_checked},
                     new int[]{-android.R.attr.state_checked}
-            }, new int[]{Color.WHITE, line.getColor()});
-            ViewCompat.setBackgroundTintList(mCheckBox, ColorStateList.valueOf(line.getColor()));
+            }, new int[]{Color.WHITE, graph.getColor()});
+            ViewCompat.setBackgroundTintList(mCheckBox, ColorStateList.valueOf(graph.getColor()));
             mCheckBox.setTextColor(colorStateList);
             mCheckBox.setOnCheckedChangeListener(null);
-            mCheckBox.setChecked(line.isVisible());
+            mCheckBox.setChecked(graph.isVisible());
             mCheckBox.jumpDrawablesToCurrentState();
             mCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                line.setVisible(isChecked);
+                graph.setVisible(isChecked);
                 if (mOnCheckChangedListener != null) {
-                    mOnCheckChangedListener.onCheckChanged(line, isChecked);
+                    mOnCheckChangedListener.onCheckChanged(graph, isChecked);
                 }
             });
             itemView.setOnClickListener(v -> mCheckBox.setChecked(!mCheckBox.isChecked()));

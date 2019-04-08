@@ -2,23 +2,23 @@ package ru.zhelonkin.tgcontest.task;
 
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.ChartData;
-import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Result;
-import ru.zhelonkin.tgcontest.model.deserializer.GraphParser;
+import ru.zhelonkin.tgcontest.model.deserializer.ChartParser;
 
 public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
 
@@ -44,8 +44,8 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
     @Override
     protected Result<ChartData> doInBackground(Void... voids) {
         try {
-            List<Graph> graphs = parseJSON(mAssetManager.open("chart_data.json"));
-            return new Result<>(new ChartData(graphs));
+            List<Chart> charts = parseJSON(mAssetManager.open("overview_3.json"));
+            return new Result<>(new ChartData(charts));
         } catch (IOException | JSONException e) {
             return new Result<>(e);
         }
@@ -62,14 +62,25 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
     }
 
 
-    private List<Graph> parseJSON(InputStream is) throws IOException, JSONException {
-        GraphParser graphParser = new GraphParser();
-        JSONArray array = new JSONArray(readToString(is));
-        List<Graph> result = new ArrayList<>(array.length());
-        for (int i = 0; i < array.length(); i++) {
-            result.add(graphParser.parse(array.getJSONObject(i)));
+    private List<Chart> parseJSON(InputStream is) throws IOException, JSONException {
+        String data = readToString(is);
+        ChartParser chartParser = new ChartParser();
+        JSONArray array = null;
+        try{
+            array = new JSONArray(data);
+        }catch (JSONException e){
+            //do nothing
         }
-        return result;
+        if(array !=null){
+            List<Chart> result = new ArrayList<>(array.length());
+            for (int i = 0; i < array.length(); i++) {
+                result.add(chartParser.parse(array.getJSONObject(i)));
+            }
+            return result;
+        }
+        return Collections.singletonList(chartParser.parse(new JSONObject(data)));
+
+
     }
 
     private String readToString(InputStream is) throws IOException {
