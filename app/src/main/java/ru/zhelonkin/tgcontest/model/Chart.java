@@ -10,6 +10,7 @@ public class Chart {
 
     private List<Graph> mGraphs;
     private List<Long> mXValues;
+    private float[] sums;
 
     private boolean mYScaled;
     private boolean mStacked;
@@ -32,8 +33,11 @@ public class Chart {
 
         mMinX = calcMinX();
         mMaxX = calcMaxX();
-        mMinY = 0;//calcMinY();
         mMaxY = calcMaxY();
+        mMinY = 0;
+
+        sums = new float[xValues.size()];
+        updateSums();
     }
 
     @NonNull
@@ -92,6 +96,7 @@ public class Chart {
     }
 
     private long calcMaxY() {
+        if (mPercentage) return 100;
         long maxY = mGraphs.get(0).getPoints().get(0).y;
 
         long[] sumArr = new long[mXValues.size()];
@@ -112,24 +117,6 @@ public class Chart {
         return maxY;
     }
 
-    private long calcMinY() {
-        long minY = mGraphs.get(0).getPoints().get(0).y;
-        for (Graph graph : mGraphs) {
-            for (Point p : graph.getPoints()) {
-                if (p.y < minY) minY = p.y;
-
-            }
-        }
-        return minY;
-    }
-
-    public boolean hasVisibleGraphs() {
-        for (Graph graph : mGraphs) {
-            if (graph.isVisible()) return true;
-        }
-        return false;
-    }
-
     public int findTargetPosition(long xValue) {
         int index = Collections.binarySearch(mXValues, xValue);
         if (index >= 0) {
@@ -140,23 +127,37 @@ public class Chart {
         return Math.max(0, Math.min(index, mXValues.size() - 1));
     }
 
-
-    public List<PointAndGraph> pointsAt(int position) {
-        List<PointAndGraph> pointLList = new ArrayList<>();
+    public List<Graph> getVisibleGraphs() {
+        List<Graph> graphs = new ArrayList<>();
         for (Graph graph : getGraphs()) {
-            if (!graph.isVisible()) continue;
-            pointLList.add(new PointAndGraph(graph.getPoints().get(position), graph));
+            if (graph.isVisible()) graphs.add(graph);
         }
-        return pointLList;
+        return graphs;
     }
 
-    public class PointAndGraph {
-        public Point point;
-        public Graph mGraph;
+    public long getX(Graph graph, int pointPosition) {
+        Point point = graph.getPoints().get(pointPosition);
+        return point.x;
+    }
 
-        PointAndGraph(Point point, Graph graph) {
-            this.point = point;
-            this.mGraph = graph;
+    public float getY(Graph graph, int pointPosition) {
+        Point point = graph.getPoints().get(pointPosition);
+        if (mPercentage) {
+            return (100 * point.y) / sums[pointPosition];
+        }
+        return point.y;
+    }
+
+
+    public void updateSums() {
+        if (!mPercentage) {
+            return;
+        }
+        for (int i = 0; i < getXValues().size(); i++) {
+            sums[i] = 0;
+            for (Graph graph : mGraphs) {
+                sums[i] += graph.getPoints().get(i).y * graph.getAlpha();
+            }
         }
     }
 

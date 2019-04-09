@@ -84,8 +84,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
 
         @Override
         public void onCheckChanged(Graph graph, boolean checked) {
-            chartView.updateGraphLines();
-            chartPreview.updateGraphLines();
+            chartView.updateGraphs();
+            chartPreview.updateGraphs();
         }
 
     }

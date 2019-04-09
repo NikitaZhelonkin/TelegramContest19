@@ -44,7 +44,12 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
     @Override
     protected Result<ChartData> doInBackground(Void... voids) {
         try {
-            List<Chart> charts = parseJSON(mAssetManager.open("overview_3.json"));
+            List<Chart> charts = new ArrayList<>();
+            charts.addAll(parseJSON(mAssetManager.open("overview_1.json")));
+            charts.addAll(parseJSON(mAssetManager.open("overview_2.json")));
+            charts.addAll(parseJSON(mAssetManager.open("overview_3.json")));
+            charts.addAll(parseJSON(mAssetManager.open("overview_4.json")));
+            charts.addAll(parseJSON(mAssetManager.open("overview_5.json")));
             return new Result<>(new ChartData(charts));
         } catch (IOException | JSONException e) {
             return new Result<>(e);

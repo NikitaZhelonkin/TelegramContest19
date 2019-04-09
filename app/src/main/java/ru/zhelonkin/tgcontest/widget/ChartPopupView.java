@@ -18,6 +18,7 @@ import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.SimpleNumberFormatter;
 import ru.zhelonkin.tgcontest.model.Chart;
+import ru.zhelonkin.tgcontest.model.Graph;
 
 public class ChartPopupView extends LinearLayout {
 
@@ -77,26 +78,29 @@ public class ChartPopupView extends LinearLayout {
         return mIsShowing;
     }
 
-    void bindData(List<Chart.PointAndGraph> points) {
-        if (points.size() == 0) return;
-        mXValueView.setText(mDateFormatter.format(points.get(0).point.x));
-        mAdapter.setData(points);
+    void bindData(Chart chart, int position) {
+        mXValueView.setText(mDateFormatter.format(chart.getXValues().get(position)));
+        mAdapter.setData(chart, position);
     }
 
     private static class Adapter extends DynamicViewDelegate.Adapter<ChartPopupView.Adapter.ViewHolder> {
 
         private Formatter mValueFormatter = new SimpleNumberFormatter();
 
-        private List<Chart.PointAndGraph> mPointAndGraphs;
+        private Chart mChart;
+        private int mPointPosition;
+        private List<Graph> mGraphs;
 
-        void setData(List<Chart.PointAndGraph> pointAndGraphs) {
-            mPointAndGraphs = pointAndGraphs;
+        void setData(Chart chart, int position) {
+            mChart = chart;
+            mPointPosition = position;
+            mGraphs = mChart.getVisibleGraphs();
             notifyDataChanged();
         }
 
         @Override
         public int getCount() {
-            return mPointAndGraphs == null ? 0 : mPointAndGraphs.size();
+            return mGraphs == null ? 0 : mGraphs.size();
         }
 
         @Override
@@ -107,10 +111,10 @@ public class ChartPopupView extends LinearLayout {
 
         @Override
         protected void onBindViewHolder(ChartPopupView.Adapter.ViewHolder viewHolder, int position, Object payload) {
-            Chart.PointAndGraph pointAndGraph = mPointAndGraphs.get(position);
-            viewHolder.lineNameView.setText(pointAndGraph.mGraph.getName());
-            viewHolder.valueView.setTextColor(pointAndGraph.mGraph.getColor());
-            viewHolder.valueView.setText(mValueFormatter.format(pointAndGraph.point.y));
+            Graph graph = mGraphs.get(position);
+            viewHolder.lineNameView.setText(graph.getName());
+            viewHolder.valueView.setTextColor(graph.getColor());
+            viewHolder.valueView.setText(mValueFormatter.format((long) mChart.getY(graph, mPointPosition)));
         }
 
         class ViewHolder extends DynamicViewDelegate.ViewHolder {
