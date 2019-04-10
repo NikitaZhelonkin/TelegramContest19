@@ -62,7 +62,7 @@
         <item name="android:background">@drawable/bg_popup_night</item>
     </style>
 
-    <style name="TextAppearance.Chart" parent="TextAppearance.AppCompat">
+    <style name="TextAppearance.Chart" parent="">
         <item name="android:textSize">12sp</item>
         <item name="android:textColor">#252529</item>
 

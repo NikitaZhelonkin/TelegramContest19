@@ -8,7 +8,7 @@ import android.view.View;
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
+import ru.zhelonkin.tgcontest.FastOutSlowInInterpolator;
 import ru.zhelonkin.tgcontest.model.Graph;
 
 public class GraphAnimator {
