@@ -6,8 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import ru.zhelonkin.tgcontest.R;
@@ -15,29 +13,32 @@ import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.widget.Checkbox;
 import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
+import ru.zhelonkin.tgcontest.widget.ShakeAnimator;
 
 public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.ViewHolder> {
 
-    public interface OnCheckChangedListener {
+    public interface Callback {
         void onCheckChanged(Graph graph, boolean checked);
+        void onLongClick(Graph graph);
     }
 
-    private List<Graph> mGraphs;
 
-    private OnCheckChangedListener mOnCheckChangedListener;
+    private Chart mChart;
 
-    public void setGraphs(List<Graph> graphs) {
-        mGraphs = graphs;
+    private Callback mCallback;
+
+    public void setGraphs(Chart chart) {
+        mChart = chart;
         notifyDataChanged();
     }
 
     @Override
     public int getCount() {
-        return mGraphs == null ? 0 : mGraphs.size();
+        return mChart == null || mChart.getGraphs().size() == 1 ? 0 : mChart.getGraphs().size();
     }
 
-    public void setOnCheckChangedListener(OnCheckChangedListener onCheckChangedListener) {
-        mOnCheckChangedListener = onCheckChangedListener;
+    public void setCallback(Callback callback) {
+        mCallback = callback;
     }
 
     @Override
@@ -48,7 +49,7 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
 
     @Override
     protected void onBindViewHolder(ViewHolder viewHolder, int position, Object payload) {
-        viewHolder.bind(mGraphs.get(position));
+        viewHolder.bind(mChart.getGraphs().get(position));
     }
 
     class ViewHolder extends DynamicViewDelegate.ViewHolder {
@@ -72,11 +73,25 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
             mCheckBox.setChecked(graph.isVisible());
             mCheckBox.jumpDrawablesToCurrentState();
             mCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (mOnCheckChangedListener != null) {
-                    mOnCheckChangedListener.onCheckChanged(graph, isChecked);
+                if (mCallback != null) {
+                    mCallback.onCheckChanged(graph, isChecked);
+                }
+
+            });
+            itemView.setOnClickListener(v -> {
+                if (mChart.getVisibleGraphs().size() < 2 && mCheckBox.isChecked()) {
+                    ShakeAnimator.ofView(mCheckBox, 12).start();
+                }else {
+                    mCheckBox.setChecked(!mCheckBox.isChecked());
                 }
             });
-            itemView.setOnClickListener(v -> mCheckBox.setChecked(!mCheckBox.isChecked()));
+            itemView.setOnLongClickListener(v -> {
+                if (mCallback != null) {
+                    mCallback.onLongClick(graph);
+                    return true;
+                }
+                return false;
+            });
         }
     }
 

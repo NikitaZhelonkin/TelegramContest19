@@ -1,6 +1,5 @@
 package ru.zhelonkin.tgcontest.main;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 
@@ -13,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import ru.zhelonkin.tgcontest.Prefs;
+import ru.zhelonkin.tgcontest.utils.Prefs;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.task.GetChartDataTask;

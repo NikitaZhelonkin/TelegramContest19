@@ -31,6 +31,7 @@
         <attr name="surfaceColor" format="color"/>
         <attr name="textAppearance" format="reference"/>
         <attr name="textPadding" format="dimension"/>
+        <attr name="cornerRadius" format="dimension"/>
     </declare-styleable>
 
     <declare-styleable name="FlowLayout">

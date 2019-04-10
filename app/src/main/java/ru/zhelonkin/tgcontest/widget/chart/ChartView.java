@@ -6,6 +6,8 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.os.Build;
 import android.text.TextPaint;
 import android.util.AttributeSet;
@@ -47,6 +49,8 @@ public class ChartView extends FrameLayout {
 
     private boolean mIsPreviewMode;
 
+    private int mCornerRadius;
+
     private int mTargetPosition = INVALID_TARGET;
 
     private boolean mIsDragging;
@@ -62,6 +66,8 @@ public class ChartView extends FrameLayout {
     private AxisesRenderer mAxisesRenderer;
 
     private ChartPopupView mChartPopupView;
+
+    private Path mCornerPath = new Path();
 
     public ChartView(Context context) {
         super(context);
@@ -91,6 +97,7 @@ public class ChartView extends FrameLayout {
         int gridColor = a.getColor(R.styleable.ChartView_gridColor, Color.BLACK);
         mSurfaceColor = a.getColor(R.styleable.ChartView_surfaceColor, Color.WHITE);
         mIsPreviewMode = a.getBoolean(R.styleable.ChartView_previewMode, false);
+        mCornerRadius = a.getDimensionPixelSize(R.styleable.ChartView_cornerRadius, 0);
 
         mTextPadding = a.getDimensionPixelSize(R.styleable.ChartView_textPadding, 0);
         int textAppearance = a.getResourceId(R.styleable.ChartView_textAppearance, -1);
@@ -130,9 +137,7 @@ public class ChartView extends FrameLayout {
         invalidate();
     }
 
-    public void setGraphVisible(Graph g, boolean visible) {
-        g.setVisible(visible);
-
+    public void onFiltersChanged() {
         mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true);
         mAxisesRenderer.updateGrid(true);
         mGraphAnimator.animateVisibility(mChart.getGraphs());
@@ -150,11 +155,26 @@ public class ChartView extends FrameLayout {
         super.onDraw(canvas);
         if (mChart == null || mChartRenderer == null) return;
 
+        int saveCount = canvas.save();
+        if (mCornerRadius != 0) {
+            canvas.clipPath(mCornerPath);
+        }
+
         mChart.updateSums();//<<--костыль?
 
         mChartRenderer.render(canvas, mTargetPosition);
         if (!mIsPreviewMode) mAxisesRenderer.render(canvas, mTargetPosition);
+        canvas.restoreToCount(saveCount);
+    }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (mCornerRadius != 0) {
+            RectF rectF = new RectF(getPaddingLeft(), getPaddingTop(), w - getPaddingRight(), h - getPaddingBottom());
+            mCornerPath.reset();
+            mCornerPath.addRoundRect(rectF, mCornerRadius, mCornerRadius, Path.Direction.CW);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")

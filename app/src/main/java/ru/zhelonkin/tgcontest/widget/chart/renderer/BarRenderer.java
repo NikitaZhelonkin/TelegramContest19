@@ -2,11 +2,10 @@ package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.text.TextPaint;
 
 import java.util.List;
 
-import ru.zhelonkin.tgcontest.Alpha;
+import ru.zhelonkin.tgcontest.utils.Alpha;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Point;

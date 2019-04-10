@@ -7,7 +7,7 @@ import android.os.Build;
 
 import java.util.List;
 
-import ru.zhelonkin.tgcontest.Alpha;
+import ru.zhelonkin.tgcontest.utils.Alpha;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Point;

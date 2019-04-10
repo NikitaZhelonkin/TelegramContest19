@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest;
+package ru.zhelonkin.tgcontest.utils;
 
 import android.graphics.Canvas;
 import android.graphics.Path;

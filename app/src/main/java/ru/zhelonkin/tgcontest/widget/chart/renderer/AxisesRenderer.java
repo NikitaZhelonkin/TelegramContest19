@@ -7,11 +7,8 @@ import android.text.TextPaint;
 import android.util.LongSparseArray;
 import android.view.View;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import androidx.annotation.Keep;
-import ru.zhelonkin.tgcontest.Alpha;
+import ru.zhelonkin.tgcontest.utils.Alpha;
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;

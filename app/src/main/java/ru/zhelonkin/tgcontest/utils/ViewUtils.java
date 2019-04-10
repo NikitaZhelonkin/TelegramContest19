@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest;
+package ru.zhelonkin.tgcontest.utils;
 
 import android.view.View;
 import android.view.ViewTreeObserver;

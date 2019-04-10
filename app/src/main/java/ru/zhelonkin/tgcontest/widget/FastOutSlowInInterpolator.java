@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest;
+package ru.zhelonkin.tgcontest.widget;
 
 import android.view.animation.Interpolator;
 

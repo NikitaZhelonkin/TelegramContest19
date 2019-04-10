@@ -6,7 +6,7 @@ import android.graphics.Path;
 
 import java.util.List;
 
-import ru.zhelonkin.tgcontest.CanvasCompat;
+import ru.zhelonkin.tgcontest.utils.CanvasCompat;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Point;

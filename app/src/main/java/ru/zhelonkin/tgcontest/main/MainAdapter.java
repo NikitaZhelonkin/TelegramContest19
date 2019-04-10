@@ -1,20 +1,25 @@
 package ru.zhelonkin.tgcontest.main;
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 import ru.zhelonkin.tgcontest.R;
-import ru.zhelonkin.tgcontest.ViewUtils;
+import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
+import ru.zhelonkin.tgcontest.formatter.DateFormatter;
+import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.model.Graph;
-import ru.zhelonkin.tgcontest.widget.chart.ChartView;
+import ru.zhelonkin.tgcontest.utils.ViewUtils;
 import ru.zhelonkin.tgcontest.widget.DynamicFlowLayout;
 import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
+import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolder> {
 
@@ -43,9 +48,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
     }
 
     class ChartViewHolder extends RecyclerView.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
-            FiltersAdapter.OnCheckChangedListener {
+            FiltersAdapter.Callback {
+
+        private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("dd MMM YYYY"));
 
         private TextView titleView;
+        private TextView rangeView;
         private ChartView chartView;
         private ChartView chartPreview;
         private RangeSeekBar rangeSeekBar;
@@ -54,19 +62,20 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
         ChartViewHolder(@NonNull View itemView) {
             super(itemView);
             titleView = itemView.findViewById(R.id.title);
+            rangeView = itemView.findViewById(R.id.range);
             chartView = itemView.findViewById(R.id.chart_view);
             chartPreview = itemView.findViewById(R.id.chart_preview);
             rangeSeekBar = itemView.findViewById(R.id.rangeBar);
             rangeSeekBar.setOnRangeSeekBarChangeListener(this);
             DynamicFlowLayout linesLayout = itemView.findViewById(R.id.line_list_layout);
             linesLayout.setAdapter(filtersAdapter = new FiltersAdapter());
-            filtersAdapter.setOnCheckChangedListener(this);
+            filtersAdapter.setCallback(this);
         }
 
         void bindView(Chart chart, int position) {
             chartView.setChart(chart);
             chartPreview.setChart(chart);
-            filtersAdapter.setGraphs(chart.getGraphs());
+            filtersAdapter.setGraphs(chart);
             titleView.setText(itemView.getContext().getString(R.string.chart_title, position + 1));
 
             ViewUtils.onPreDraw(chartView, () -> {
@@ -80,13 +89,28 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             chart.left = leftValue;
             chart.right = rightValue;
             chartView.setChartLeftAndRight(chart.left / 100f, chart.right / 100f, fromUser);
+            List<Long> xValues = chart.getXValues();
+            String leftDate = mDateFormatter.format(xValues.get((int) ((xValues.size() - 1) * chart.left / 100f)));
+            String rightDate = mDateFormatter.format(xValues.get((int) ((xValues.size() - 1) * chart.right / 100f)));
+            rangeView.setText(itemView.getContext().getString(R.string.range_format, leftDate, rightDate));
         }
 
         @Override
         public void onCheckChanged(Graph graph, boolean checked) {
-            chartView.setGraphVisible(graph, checked);
-            chartPreview.setGraphVisible(graph, checked);
+            graph.setVisible(checked);
+            chartView.onFiltersChanged();
+            chartPreview.onFiltersChanged();
         }
 
+        @Override
+        public void onLongClick(Graph graph) {
+            Chart chart = mChartData.getCharts().get(getAdapterPosition());
+            for (Graph g : chart.getGraphs()) {
+                g.setVisible(g == graph);
+            }
+            filtersAdapter.notifyDataChanged();
+            chartView.onFiltersChanged();
+            chartPreview.onFiltersChanged();
+        }
     }
 }
