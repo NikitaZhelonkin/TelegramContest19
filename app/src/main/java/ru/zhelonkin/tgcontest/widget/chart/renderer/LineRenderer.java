@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest.widget.renderer;
+package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -11,26 +11,26 @@ import ru.zhelonkin.tgcontest.Alpha;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Point;
-import ru.zhelonkin.tgcontest.widget.ChartView;
-import ru.zhelonkin.tgcontest.widget.PointTransformer;
+import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
-public class LineRenderer implements Renderer {
+public class LineRenderer extends BaseRenderer {
 
     private Paint mGraphPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private ChartView mView;
     private Chart mChart;
-    private PointTransformer mPointTransformer;
     private int mSurfaceColor;
     private Path mGraphPath = new Path();
     private Paint mXPaint;
 
-    public LineRenderer(ChartView view, Chart chart, PointTransformer transformer, Paint xPaint, int lineWidth, int surfaceColor) {
+    public LineRenderer(ChartView view, Chart chart,  Viewport viewport, Paint gridPaint,
+                        int lineWidth,
+                        int surfaceColor) {
+        super(viewport);
         mView = view;
         mChart = chart;
-        mPointTransformer = transformer;
         mSurfaceColor = surfaceColor;
-        mXPaint = xPaint;
+        mXPaint = gridPaint;
 
         mGraphPaint.setStrokeWidth(lineWidth);
         mGraphPaint.setStyle(Paint.Style.STROKE);
@@ -104,14 +104,6 @@ public class LineRenderer implements Renderer {
 
     private void drawX(Canvas canvas, float x) {
         canvas.drawLine(x, mView.getPaddingTop(), x, mView.getHeight() - mView.getPaddingBottom(), mXPaint);
-    }
-
-    protected float pointX(long x) {
-        return mPointTransformer.pointX(x);
-    }
-
-    protected float pointY(float y) {
-        return mPointTransformer.pointY(y);
     }
 
 }

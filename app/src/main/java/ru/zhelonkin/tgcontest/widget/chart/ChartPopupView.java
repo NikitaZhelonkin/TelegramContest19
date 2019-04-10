@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest.widget;
+package ru.zhelonkin.tgcontest.widget.chart;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -19,6 +19,8 @@ import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.SimpleNumberFormatter;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
+import ru.zhelonkin.tgcontest.widget.DynamicLinearLayout;
+import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
 
 public class ChartPopupView extends LinearLayout {
 
@@ -83,7 +85,7 @@ public class ChartPopupView extends LinearLayout {
         mAdapter.setData(chart, position);
     }
 
-    private static class Adapter extends DynamicViewDelegate.Adapter<ChartPopupView.Adapter.ViewHolder> {
+    private static class Adapter extends DynamicViewDelegate.Adapter<Adapter.ViewHolder> {
 
         private Formatter mValueFormatter = new SimpleNumberFormatter();
 

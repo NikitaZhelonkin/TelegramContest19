@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest.widget.renderer;
+package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -10,23 +10,21 @@ import ru.zhelonkin.tgcontest.CanvasCompat;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Point;
-import ru.zhelonkin.tgcontest.widget.ChartView;
-import ru.zhelonkin.tgcontest.widget.PointTransformer;
+import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
-public class AreaRenderer implements Renderer {
+public class AreaRenderer extends BaseRenderer {
 
     private ChartView mView;
     private Chart mChart;
-    private PointTransformer mPointTransformer;
     private Path mGraphPath = new Path();
     private float[] mStackBuffer;
     private Paint mXPaint;
 
-    public AreaRenderer(ChartView view, Chart chart, PointTransformer transformer, Paint xPaint) {
+    public AreaRenderer(ChartView view, Chart chart, Viewport viewport, Paint gridPaint) {
+        super(viewport);
         mView = view;
         mChart = chart;
-        mPointTransformer = transformer;
-        mXPaint = xPaint;
+        mXPaint = gridPaint;
         mStackBuffer = new float[chart.getXValues().size()];
     }
 
@@ -81,12 +79,4 @@ public class AreaRenderer implements Renderer {
         canvas.drawLine(x, mView.getPaddingTop(), x, mView.getHeight() - mView.getPaddingBottom(), mXPaint);
     }
 
-
-    protected float pointX(long x) {
-        return mPointTransformer.pointX(x);
-    }
-
-    protected float pointY(float y) {
-        return mPointTransformer.pointY(y);
-    }
 }

@@ -1,7 +1,8 @@
-package ru.zhelonkin.tgcontest.widget.renderer;
+package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.text.TextPaint;
 
 import java.util.List;
 
@@ -9,22 +10,20 @@ import ru.zhelonkin.tgcontest.Alpha;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Point;
-import ru.zhelonkin.tgcontest.widget.ChartView;
-import ru.zhelonkin.tgcontest.widget.PointTransformer;
+import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
-public class BarRenderer implements Renderer {
+public class BarRenderer extends BaseRenderer {
 
     private ChartView mView;
     private Chart mChart;
-    private PointTransformer mPointTransformer;
     private float[] mStackBuffer;
 
     private Paint mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    public BarRenderer(ChartView view, Chart chart, PointTransformer transformer) {
+    public BarRenderer(ChartView view, Chart chart, Viewport viewport) {
+        super(viewport);
         mView = view;
         mChart = chart;
-        mPointTransformer = transformer;
         mStackBuffer = new float[chart.getXValues().size()];
     }
 
@@ -74,12 +73,4 @@ public class BarRenderer implements Renderer {
         }
     }
 
-
-    protected float pointX(long x) {
-        return mPointTransformer.pointX(x);
-    }
-
-    protected float pointY(float y) {
-        return mPointTransformer.pointY(y);
-    }
 }

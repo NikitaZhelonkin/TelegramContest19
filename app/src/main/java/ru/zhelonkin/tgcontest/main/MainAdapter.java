@@ -12,7 +12,7 @@ import ru.zhelonkin.tgcontest.ViewUtils;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.model.Graph;
-import ru.zhelonkin.tgcontest.widget.ChartView;
+import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 import ru.zhelonkin.tgcontest.widget.DynamicFlowLayout;
 import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 
@@ -43,13 +43,13 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
     }
 
     class ChartViewHolder extends RecyclerView.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
-            GraphAdapter.OnCheckChangedListener {
+            FiltersAdapter.OnCheckChangedListener {
 
         private TextView titleView;
         private ChartView chartView;
         private ChartView chartPreview;
         private RangeSeekBar rangeSeekBar;
-        private GraphAdapter mGraphAdapter;
+        private FiltersAdapter filtersAdapter;
 
         ChartViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -59,14 +59,14 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             rangeSeekBar = itemView.findViewById(R.id.rangeBar);
             rangeSeekBar.setOnRangeSeekBarChangeListener(this);
             DynamicFlowLayout linesLayout = itemView.findViewById(R.id.line_list_layout);
-            linesLayout.setAdapter(mGraphAdapter = new GraphAdapter());
-            mGraphAdapter.setOnCheckChangedListener(this);
+            linesLayout.setAdapter(filtersAdapter = new FiltersAdapter());
+            filtersAdapter.setOnCheckChangedListener(this);
         }
 
         void bindView(Chart chart, int position) {
             chartView.setChart(chart);
             chartPreview.setChart(chart);
-            mGraphAdapter.setChart(chart);
+            filtersAdapter.setGraphs(chart.getGraphs());
             titleView.setText(itemView.getContext().getString(R.string.chart_title, position + 1));
 
             ViewUtils.onPreDraw(chartView, () -> {
@@ -84,8 +84,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
 
         @Override
         public void onCheckChanged(Graph graph, boolean checked) {
-            chartView.updateGraphs();
-            chartPreview.updateGraphs();
+            chartView.setGraphVisible(graph, checked);
+            chartPreview.setGraphVisible(graph, checked);
         }
 
     }

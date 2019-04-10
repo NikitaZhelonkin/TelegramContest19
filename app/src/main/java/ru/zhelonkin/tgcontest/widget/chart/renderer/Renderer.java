@@ -1,4 +1,4 @@
-package ru.zhelonkin.tgcontest.widget.renderer;
+package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 import android.graphics.Canvas;
 

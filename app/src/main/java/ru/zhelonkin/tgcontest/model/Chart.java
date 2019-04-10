@@ -10,16 +10,11 @@ public class Chart {
 
     private List<Graph> mGraphs;
     private List<Long> mXValues;
-    private float[] sums;
+    private float[] mSums;
 
     private boolean mYScaled;
     private boolean mStacked;
     private boolean mPercentage;
-
-    private long mMinX;
-    private long mMaxX;
-    private long mMinY;
-    private long mMaxY;
 
     public float left = 70f;
     public float right = 100f;
@@ -31,13 +26,7 @@ public class Chart {
         mStacked = stacked;
         mPercentage = percentage;
 
-        mMinX = calcMinX();
-        mMaxX = calcMaxX();
-        mMaxY = calcMaxY();
-        mMinY = 0;
-
-        sums = new float[xValues.size()];
-        updateSums();
+        mSums = calcSums(graphs);
     }
 
     @NonNull
@@ -59,62 +48,6 @@ public class Chart {
 
     public boolean isPercentage() {
         return mPercentage;
-    }
-
-    public long minX() {
-        return mMinX;
-    }
-
-    public long maxX() {
-        return mMaxX;
-    }
-
-    public long minY() {
-        return mMinY;
-    }
-
-    public long maxY() {
-        return mMaxY;
-    }
-
-    public float rangeX() {
-        return Math.abs(mMaxX - mMinX);
-    }
-
-    public float rangeY() {
-        return Math.abs(mMaxY - mMinY);
-    }
-
-    private long calcMaxX() {
-        List<Point> points = mGraphs.get(0).getPoints();
-        return points.get(points.size() - 1).x;
-    }
-
-    private long calcMinX() {
-        List<Point> points = mGraphs.get(0).getPoints();
-        return points.get(0).x;
-    }
-
-    private long calcMaxY() {
-        if (mPercentage) return 100;
-        long maxY = mGraphs.get(0).getPoints().get(0).y;
-
-        long[] sumArr = new long[mXValues.size()];
-        for (Graph graph : mGraphs) {
-            for (int i = 0; i < graph.getPoints().size(); i++) {
-                Point p = graph.getPoints().get(i);
-                sumArr[i] += p.y;
-                if (p.y > maxY) maxY = p.y;
-
-            }
-        }
-        if (isStacked()) {
-            //find max sum
-            for (long sum : sumArr) {
-                if (sum > maxY) maxY = sum;
-            }
-        }
-        return maxY;
     }
 
     public int findTargetPosition(long xValue) {
@@ -143,22 +76,24 @@ public class Chart {
     public float getY(Graph graph, int pointPosition) {
         Point point = graph.getPoints().get(pointPosition);
         if (mPercentage) {
-            return (100 * point.y) / sums[pointPosition];
+            return (100 * point.y) / mSums[pointPosition];
         }
         return point.y;
     }
 
-
-    public void updateSums() {
-        if (!mPercentage) {
-            return;
-        }
+    public float[] calcSums(List<Graph> graphs){
+        float[] sums = new float[mXValues.size()];
         for (int i = 0; i < getXValues().size(); i++) {
             sums[i] = 0;
-            for (Graph graph : mGraphs) {
+            for (Graph graph : graphs) {
                 sums[i] += graph.getPoints().get(i).y * graph.getAlpha();
             }
         }
+        return sums;
+    }
+
+    public void updateSums() {
+        if (mPercentage) mSums = calcSums(mGraphs);
     }
 
 }

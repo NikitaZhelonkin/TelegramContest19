@@ -63,4 +63,25 @@ public class Graph {
         return mVisible;
     }
 
+    public long rangeY() {
+        return maxY() - minY();
+    }
+
+    public long minY() {
+        return 0;
+    }
+
+    public long maxY() {
+        return calcMaxY();
+    }
+
+    private long calcMaxY() {
+        long maxY = getPoints().get(0).y;
+        for (int i = 0; i < getPoints().size(); i++) {
+            Point p = getPoints().get(i);
+            if (p.y > maxY) maxY = p.y;
+        }
+        return maxY;
+    }
+
 }

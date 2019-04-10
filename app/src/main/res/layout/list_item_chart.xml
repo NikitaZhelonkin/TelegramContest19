@@ -18,7 +18,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ru.zhelonkin.tgcontest.widget.ChartView
+    <ru.zhelonkin.tgcontest.widget.chart.ChartView
         android:id="@+id/chart_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -38,7 +38,7 @@
         app:textAppearance="?textAppearanceChart"
         app:textPadding="5dp" />
 
-    <ru.zhelonkin.tgcontest.widget.ChartView
+    <ru.zhelonkin.tgcontest.widget.chart.ChartView
         android:id="@+id/chart_preview"
         android:layout_width="0dp"
         android:layout_height="38dp"
