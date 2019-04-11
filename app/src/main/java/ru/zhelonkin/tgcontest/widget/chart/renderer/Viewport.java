@@ -5,7 +5,7 @@ import android.animation.PropertyValuesHolder;
 
 import java.util.List;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 import ru.zhelonkin.tgcontest.widget.FastOutSlowInInterpolator;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;

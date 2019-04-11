@@ -30,9 +30,6 @@ public class AreaRenderer extends BaseRenderer {
 
     @Override
     public void render(Canvas canvas, int targetPosition) {
-        if (targetPosition != ChartView.INVALID_TARGET)
-            drawX(canvas, pointX(mChart.getXValues().get(targetPosition)));
-
         for (int i = 0; i < mStackBuffer.length; i++) {
             mStackBuffer[i] = 0;
         }
@@ -49,6 +46,9 @@ public class AreaRenderer extends BaseRenderer {
             drawAreaGraph(canvas, graph);
         }
         canvas.restoreToCount(saveCount);
+
+        if (targetPosition != ChartView.INVALID_TARGET)
+            drawX(canvas, pointX(mChart.getXValues().get(targetPosition)));
     }
 
     private void drawAreaGraph(Canvas canvas, Graph graph) {

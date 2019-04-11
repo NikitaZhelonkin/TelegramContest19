@@ -9,15 +9,15 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
@@ -236,24 +236,25 @@ public class ChartView extends FrameLayout {
         if (!mChartPopupView.isShowing()) {
             mChartPopupView.show(true);
             mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition);
+            updatePopupPosition(targetPosition, false);
         }
     }
 
     private void updatePopup(int targetPosition) {
         if (mChartPopupView.isShowing()) {
             mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition);
+            updatePopupPosition(targetPosition, true);
         }
     }
 
-    private void updatePopupPosition(int targetPosition) {
-        float x = mViewport.pointX(mChart.getXValues().get(targetPosition));
-        mChartPopupView.measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.AT_MOST),
+    private void updatePopupPosition(int targetPosition, boolean animate) {
+        float x = mViewport.pointX(mChart.getXValues().get(targetPosition)) - getPaddingLeft();
+        int width = getWidth() - getPaddingLeft() - getPaddingRight();
+        mChartPopupView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST),
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
         int popupWidth = mChartPopupView.getMeasuredWidth();
-        int width = getWidth() - getPaddingLeft() - getPaddingRight();
-        float position = Math.max(0, Math.min(width - popupWidth, x - popupWidth / 2f));
+        float position = x > width / 2f ? x - popupWidth : x;
+        position = Math.max(-getPaddingLeft(), Math.min(width + getPaddingRight() - popupWidth, position));
         mChartPopupView.setTranslationX(position);
     }
 
