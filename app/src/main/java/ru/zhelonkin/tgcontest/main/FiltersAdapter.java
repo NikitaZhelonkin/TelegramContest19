@@ -56,9 +56,12 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
 
         Checkbox mCheckBox;
 
+        int mShakeOffset;
+
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             mCheckBox = itemView.findViewById(R.id.checkbox);
+            mShakeOffset = itemView.getResources().getDimensionPixelSize(R.dimen.shake_offset);
         }
 
         void bind(Graph graph) {
@@ -80,7 +83,7 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
             });
             itemView.setOnClickListener(v -> {
                 if (mChart.getVisibleGraphs().size() < 2 && mCheckBox.isChecked()) {
-                    ShakeAnimator.ofView(mCheckBox, 12).start();
+                    ShakeAnimator.ofView(mCheckBox, mShakeOffset).start();
                 }else {
                     mCheckBox.setChecked(!mCheckBox.isChecked());
                 }
