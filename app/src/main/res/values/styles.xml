@@ -1,11 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Base.AppTheme" parent="Theme.AppCompat"/>
-
-    <style name="AppTheme" parent="Base.AppTheme">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+    <style name="AppTheme" parent="android:Theme.Material.Light">
+        <item name="android:colorPrimary">@color/colorPrimary</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="android:colorAccent">@color/colorAccent</item>
         <item name="android:windowBackground">@color/colorBackground</item>
         <item name="colorSurface">@color/colorSurface</item>
         <item name="rangeSeekBarStyle">@style/RangeSeekBar</item>
@@ -15,15 +13,15 @@
         <item name="popupStyle">@style/Popup</item>
         <item name="textAppearanceChart">@style/TextAppearance.Chart</item>
         <item name="android:listDivider">@drawable/shadow</item>
-        <item name="actionBarStyle">@style/ActionBar</item>
+        <item name="android:actionBarStyle">@style/ActionBar</item>
         <item name="moonIcon">@drawable/ic_day_night_24dp</item>
         <item name="android:windowLightStatusBar" tools:ignore="NewApi">true</item>
     </style>
 
-    <style name="AppTheme.Night" parent="Base.AppTheme">
-        <item name="colorPrimary">@color/colorPrimaryNight</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDarkNight</item>
-        <item name="colorAccent">@color/colorAccentNight</item>
+    <style name="AppTheme.Night" parent="android:Theme.Material">
+        <item name="android:colorPrimary">@color/colorPrimaryNight</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDarkNight</item>
+        <item name="android:colorAccent">@color/colorAccentNight</item>
         <item name="android:windowBackground">@color/colorBackgroundNight</item>
         <item name="colorSurface">@color/colorSurfaceNight</item>
         <item name="rangeSeekBarStyle">@style/RangeSeekBar.Night</item>
@@ -33,13 +31,13 @@
         <item name="popupStyle">@style/Popup.Night</item>
         <item name="textAppearanceChart">@style/TextAppearance.Chart.Night</item>
         <item name="android:listDivider">@drawable/shadow</item>
-        <item name="actionBarStyle">@style/ActionBar</item>
+        <item name="android:actionBarStyle">@style/ActionBar</item>
         <item name="moonIcon">@drawable/ic_day_night_white_24dp</item>
         <item name="android:windowLightStatusBar" tools:ignore="NewApi">false</item>
     </style>
 
-    <style name="ActionBar" parent="Widget.AppCompat.ActionBar.Solid">
-        <item name="elevation">0dp</item>
+    <style name="ActionBar" parent="android:Widget.Material.ActionBar.Solid">
+        <item name="android:elevation">0dp</item>
     </style>
 
     <style name="RangeSeekBar">

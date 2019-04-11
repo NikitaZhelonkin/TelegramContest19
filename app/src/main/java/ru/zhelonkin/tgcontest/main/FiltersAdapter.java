@@ -6,8 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.core.view.ViewCompat;
+import android.support.annotation.NonNull;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
@@ -70,7 +69,7 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
                     new int[]{android.R.attr.state_checked},
                     new int[]{-android.R.attr.state_checked}
             }, new int[]{Color.WHITE, graph.getColor()});
-            ViewCompat.setBackgroundTintList(mCheckBox, ColorStateList.valueOf(graph.getColor()));
+            mCheckBox.setBackgroundTintList(ColorStateList.valueOf(graph.getColor()));
             mCheckBox.setTextColor(colorStateList);
             mCheckBox.setOnCheckedChangeListener(null);
             mCheckBox.setChecked(graph.isVisible());

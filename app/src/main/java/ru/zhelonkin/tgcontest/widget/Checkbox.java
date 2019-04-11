@@ -10,12 +10,10 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.widget.CompoundButton;
 
-import androidx.annotation.Nullable;
-import androidx.core.view.TintableBackgroundView;
-import ru.zhelonkin.tgcontest.R;
+import android.support.annotation.Nullable;
 
 
-public class Checkbox extends CompoundButton implements TintableBackgroundView {
+public class Checkbox extends CompoundButton {
 
     private Drawable mDrawable;
     private ColorStateList mTint;
@@ -41,7 +39,7 @@ public class Checkbox extends CompoundButton implements TintableBackgroundView {
     }
 
     private void init(Context context, AttributeSet attrs) {
-        int[] tintAttr = new int[]{R.attr.backgroundTint};
+        int[] tintAttr = new int[]{android.R.attr.backgroundTint};
         TypedArray a = context.obtainStyledAttributes(attrs, tintAttr);
 
         int tint = a.getColor(0, 0);
@@ -68,7 +66,6 @@ public class Checkbox extends CompoundButton implements TintableBackgroundView {
         }
     }
 
-    @Override
     public void setSupportBackgroundTintList(@Nullable ColorStateList tint) {
         mTint = tint;
         if (tint == null) {
@@ -77,22 +74,6 @@ public class Checkbox extends CompoundButton implements TintableBackgroundView {
         setSupportTintList(getBackground(), tint, getDrawableState());
     }
 
-    @Nullable
-    @Override
-    public ColorStateList getSupportBackgroundTintList() {
-        return mTint;
-    }
-
-    @Override
-    public void setSupportBackgroundTintMode(@Nullable PorterDuff.Mode tintMode) {
-        //do nothing
-    }
-
-    @Nullable
-    @Override
-    public PorterDuff.Mode getSupportBackgroundTintMode() {
-        return null;
-    }
 
     private static void setSupportTintList(Drawable drawable, ColorStateList tint, int[] state) {
         if (tint != null) {

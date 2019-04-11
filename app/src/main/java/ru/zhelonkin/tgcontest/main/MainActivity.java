@@ -1,23 +1,20 @@
 package ru.zhelonkin.tgcontest.main;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import ru.zhelonkin.tgcontest.utils.Prefs;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.task.GetChartDataTask;
 
-public class MainActivity extends AppCompatActivity implements
+public class MainActivity extends Activity implements
         GetChartDataTask.Callback {
 
     private GetChartDataTask mGetChartDataTask;
@@ -33,13 +30,11 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        RecyclerView recyclerView = findViewById(R.id.recycler_view);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
-        recyclerView.setAdapter(mMainAdapter);
+        ListView listView = findViewById(R.id.list_view);
+        listView.setAdapter(mMainAdapter);
 
 
-        ChartData chartData = (ChartData) getLastCustomNonConfigurationInstance();
+        ChartData chartData = (ChartData) getLastNonConfigurationInstance();
         if (chartData != null) {
             onSuccess(chartData);
         } else {
@@ -53,9 +48,8 @@ public class MainActivity extends AppCompatActivity implements
         if (mGetChartDataTask != null) mGetChartDataTask.unsubscribe();
     }
 
-    @Nullable
     @Override
-    public Object onRetainCustomNonConfigurationInstance() {
+    public Object onRetainNonConfigurationInstance() {
         return mChartData;
     }
 

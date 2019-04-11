@@ -3,10 +3,10 @@ package ru.zhelonkin.tgcontest.widget.chart.renderer;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Region;
 
 import java.util.List;
 
-import ru.zhelonkin.tgcontest.utils.CanvasCompat;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.model.Point;
@@ -54,7 +54,7 @@ public class AreaRenderer extends BaseRenderer {
     private void drawAreaGraph(Canvas canvas, Graph graph) {
         int saveCount = canvas.save();
         if(graph.getAlpha()==0) return;
-        if (!mGraphPath.isEmpty()) CanvasCompat.clipOutPath(canvas, mGraphPath);
+        if (!mGraphPath.isEmpty()) canvas.clipPath( mGraphPath, Region.Op.DIFFERENCE);
         mGraphPath.reset();
 
         List<Point> points = graph.getPoints();

@@ -1,5 +1,6 @@
 package ru.zhelonkin.tgcontest.main;
 
+import android.support.constraint.ConstraintLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,8 +8,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+import android.support.annotation.NonNull;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
@@ -18,10 +18,11 @@ import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.utils.ViewUtils;
 import ru.zhelonkin.tgcontest.widget.DynamicFlowLayout;
+import ru.zhelonkin.tgcontest.widget.HolderAdapter;
 import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
-public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolder> {
+public class MainAdapter extends HolderAdapter<MainAdapter.ChartViewHolder> {
 
     private ChartData mChartData;
 
@@ -43,11 +44,21 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
     }
 
     @Override
-    public int getItemCount() {
+    public int getCount() {
         return mChartData == null ? 0 : mChartData.getCharts().size();
     }
 
-    class ChartViewHolder extends RecyclerView.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
+    @Override
+    public Object getItem(int position) {
+        return mChartData.getCharts().get(position);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    class ChartViewHolder extends HolderAdapter.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
             FiltersAdapter.Callback {
 
         private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("dd MMM YYYY"));

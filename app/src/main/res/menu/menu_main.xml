@@ -6,7 +6,7 @@
         android:id="@+id/theme"
         android:icon="?moonIcon"
         android:title="@string/switch_theme"
-        app:showAsAction="ifRoom">
+        android:showAsAction="ifRoom">
 
     </item>
 </menu>

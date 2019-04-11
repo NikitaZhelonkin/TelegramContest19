@@ -3,7 +3,7 @@ package ru.zhelonkin.tgcontest.widget;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import androidx.annotation.Nullable;
+import android.support.annotation.Nullable;
 
 public class DynamicFlowLayout extends FlowLayout {
 
