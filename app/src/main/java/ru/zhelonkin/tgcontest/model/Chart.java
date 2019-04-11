@@ -29,6 +29,10 @@ public class Chart {
         mSums = calcSums(graphs);
     }
 
+    public String getType(){
+       return mGraphs.get(0).getType();
+    }
+
     @NonNull
     public List<Graph> getGraphs() {
         return mGraphs;

@@ -3,17 +3,17 @@ package ru.zhelonkin.tgcontest.widget.chart.renderer;
 import android.animation.ObjectAnimator;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.support.annotation.Keep;
 import android.text.TextPaint;
 import android.util.LongSparseArray;
 import android.view.View;
 
-import android.support.annotation.Keep;
-import ru.zhelonkin.tgcontest.utils.Alpha;
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.NumberFormatter;
 import ru.zhelonkin.tgcontest.model.Chart;
+import ru.zhelonkin.tgcontest.utils.Alpha;
 import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
 public class AxisesRenderer extends BaseRenderer {
@@ -31,7 +31,7 @@ public class AxisesRenderer extends BaseRenderer {
 
     private View mView;
 
-    public AxisesRenderer(ChartView view, Chart chart, Viewport viewport,
+    public AxisesRenderer(ChartView view, Viewport viewport,
                           Paint gridPaint,
                           TextPaint textPaint,
                           int textPadding) {
@@ -124,17 +124,19 @@ public class AxisesRenderer extends BaseRenderer {
             long rangeY = (long) ((getViewport().targetChartScaleY()) * getViewport().rangeY());
             long gridSize = calcYGridSize(rangeY, Y_GRID_COUNT);
 
-            for (int i=0;i<mYValues.size();i++) {
+            for (int i = 0; i < mYValues.size(); i++) {
                 long index = mYValues.keyAt(i);
                 Value v = mYValues.get(index);
                 if (v != null) {
-                    boolean targetVisible = getViewport().targetPointY(v.value) >= mView.getPaddingTop();
+                    float targetPoint = getViewport().targetPointY(i);
+                    boolean targetVisible = targetPoint >= mView.getPaddingTop();
                     v.setVisible(targetVisible && (index - getViewport().minY()) % gridSize == 0, animate);
                 }
             }
             for (long i = getViewport().minY(); i <= getViewport().maxY(); i += gridSize) {
-                boolean targetVisible = getViewport().targetPointY(i) >= mView.getPaddingTop();
-                if (mYValues.indexOfKey(i)<0 && targetVisible) {
+                float targetPoint = getViewport().targetPointY(i);
+                boolean targetVisible = targetPoint >= mView.getPaddingTop();
+                if (mYValues.indexOfKey(i) < 0 && targetVisible) {
                     Value value = new Value(i);
                     mYValues.put(i, value);
                     value.setVisible(true, animate);

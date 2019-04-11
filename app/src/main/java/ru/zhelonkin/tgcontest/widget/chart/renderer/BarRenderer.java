@@ -15,14 +15,16 @@ public class BarRenderer extends BaseRenderer {
 
     private ChartView mView;
     private Chart mChart;
+    private List<Graph> mGraphs;
     private float[] mStackBuffer;
 
     private Paint mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    public BarRenderer(ChartView view, Chart chart, Viewport viewport) {
+    public BarRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport) {
         super(viewport);
         mView = view;
         mChart = chart;
+        mGraphs = graphs;
         mStackBuffer = new float[chart.getXValues().size()];
     }
 
@@ -31,7 +33,7 @@ public class BarRenderer extends BaseRenderer {
         for (int i = 0; i < mStackBuffer.length; i++) {
             mStackBuffer[i] = 0;
         }
-        for (Graph graph : mChart.getGraphs()) {
+        for (Graph graph : mGraphs) {
             drawBarGraph(canvas, graph, targetPosition);
         }
     }

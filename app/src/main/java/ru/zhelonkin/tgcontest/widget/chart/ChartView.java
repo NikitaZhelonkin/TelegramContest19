@@ -18,6 +18,9 @@ import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
+import java.util.Collections;
+import java.util.List;
+
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
@@ -61,7 +64,11 @@ public class ChartView extends FrameLayout {
 
     private Viewport mViewport;
 
+    private Viewport mViewportSecondary;
+
     private Renderer mChartRenderer;
+
+    private Renderer mChartRendererSecondary;
 
     private AxisesRenderer mAxisesRenderer;
 
@@ -131,14 +138,27 @@ public class ChartView extends FrameLayout {
 
     public void setChart(@NonNull Chart chart) {
         mChart = chart;
-        mViewport = new Viewport(this, chart);
-        mChartRenderer = createRendererForChart(chart);
-        mAxisesRenderer = new AxisesRenderer(this, chart, mViewport, mGridPaint, mTextPaint, mTextPadding);
+        if(chart.isYScaled()){
+            List<Graph> graphs = Collections.singletonList(chart.getGraphs().get(0));
+            List<Graph> graphsSecondary = Collections.singletonList(chart.getGraphs().get(1));
+            mViewport = new Viewport(this, chart, graphs );
+            mChartRenderer = createRendererForChart(chart, graphs, mViewport);
+            mViewportSecondary = new Viewport(this, chart, graphsSecondary );
+            mChartRendererSecondary = createRendererForChart(chart, graphsSecondary, mViewportSecondary);
+        }else {
+            mViewport = new Viewport(this, chart, chart.getGraphs());
+            mChartRenderer = createRendererForChart(chart, chart.getGraphs(), mViewport);
+        }
+
+        mAxisesRenderer = new AxisesRenderer(this, mViewport, mGridPaint, mTextPaint, mTextPadding);
         invalidate();
     }
 
     public void onFiltersChanged() {
         mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true);
+        if(mViewportSecondary!=null){
+            mViewportSecondary.setChartLeftAndRight(mViewportSecondary.getChartLeft(), mViewportSecondary.getChartRight(), true);
+        }
         mAxisesRenderer.updateGrid(true);
         mGraphAnimator.animateVisibility(mChart.getGraphs());
     }
@@ -146,6 +166,9 @@ public class ChartView extends FrameLayout {
     public void setChartLeftAndRight(float left, float right, boolean animate) {
         if (mChart == null) return;
         mViewport.setChartLeftAndRight(left, right, animate);
+        if (mViewportSecondary != null) {
+            mViewportSecondary.setChartLeftAndRight(left, right, animate);
+        }
         mAxisesRenderer.updateGrid(animate);
 
     }
@@ -163,6 +186,11 @@ public class ChartView extends FrameLayout {
         mChart.updateSums();//<<--костыль?
 
         mChartRenderer.render(canvas, mTargetPosition);
+
+        if (mChartRendererSecondary != null) {
+            mChartRendererSecondary.render(canvas, mTargetPosition);
+        }
+
         if (!mIsPreviewMode) mAxisesRenderer.render(canvas, mTargetPosition);
         canvas.restoreToCount(saveCount);
     }
@@ -236,18 +264,18 @@ public class ChartView extends FrameLayout {
         if (!mChartPopupView.isShowing()) {
             mChartPopupView.show(true);
             mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition, false);
+            updatePopupPosition(targetPosition);
         }
     }
 
     private void updatePopup(int targetPosition) {
         if (mChartPopupView.isShowing()) {
             mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition, true);
+            updatePopupPosition(targetPosition);
         }
     }
 
-    private void updatePopupPosition(int targetPosition, boolean animate) {
+    private void updatePopupPosition(int targetPosition) {
         float x = mViewport.pointX(mChart.getXValues().get(targetPosition)) - getPaddingLeft();
         int width = getWidth() - getPaddingLeft() - getPaddingRight();
         mChartPopupView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST),
@@ -264,14 +292,14 @@ public class ChartView extends FrameLayout {
         }
     }
 
-    private BaseRenderer createRendererForChart(Chart chart) {
-        String type = chart.getGraphs().get(0).getType();
+    private BaseRenderer createRendererForChart(Chart chart,  List<Graph> graphList, Viewport viewport) {
+        String type = chart.getType();
         if (Graph.TYPE_BAR.equals(type)) {
-            return new BarRenderer(this, chart, mViewport);
+            return new BarRenderer(this, chart, graphList, viewport);
         } else if (Graph.TYPE_AREA.equals(type)) {
-            return new AreaRenderer(this, chart, mViewport, mGridPaint);
+            return new AreaRenderer(this, chart, graphList, viewport, mGridPaint);
         } else {
-            return new LineRenderer(this, chart, mViewport, mGridPaint, mLineWidth, mSurfaceColor);
+            return new LineRenderer(this, chart, graphList, viewport, mGridPaint, mLineWidth, mSurfaceColor);
         }
     }
 }

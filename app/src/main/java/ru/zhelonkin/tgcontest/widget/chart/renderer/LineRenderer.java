@@ -19,16 +19,18 @@ public class LineRenderer extends BaseRenderer {
 
     private ChartView mView;
     private Chart mChart;
+    private List<Graph> mGraphs;
     private int mSurfaceColor;
     private Path mGraphPath = new Path();
     private Paint mXPaint;
 
-    public LineRenderer(ChartView view, Chart chart,  Viewport viewport, Paint gridPaint,
+    public LineRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport, Paint gridPaint,
                         int lineWidth,
                         int surfaceColor) {
         super(viewport);
         mView = view;
         mChart = chart;
+        mGraphs = graphs;
         mSurfaceColor = surfaceColor;
         mXPaint = gridPaint;
 
@@ -43,7 +45,7 @@ public class LineRenderer extends BaseRenderer {
         if (targetPosition != ChartView.INVALID_TARGET)
             drawX(canvas, pointX(mChart.getXValues().get(targetPosition)));
 
-        for (Graph graph : mChart.getGraphs()) {
+        for (Graph graph : mGraphs) {
             drawLineGraph(canvas, graph, targetPosition);
         }
     }

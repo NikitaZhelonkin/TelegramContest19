@@ -16,14 +16,16 @@ public class AreaRenderer extends BaseRenderer {
 
     private ChartView mView;
     private Chart mChart;
+    private List<Graph> mGraphs;
     private Path mGraphPath = new Path();
     private float[] mStackBuffer;
     private Paint mXPaint;
 
-    public AreaRenderer(ChartView view, Chart chart, Viewport viewport, Paint gridPaint) {
+    public AreaRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport, Paint gridPaint) {
         super(viewport);
         mView = view;
         mChart = chart;
+        mGraphs = graphs;
         mXPaint = gridPaint;
         mStackBuffer = new float[chart.getXValues().size()];
     }
@@ -42,7 +44,7 @@ public class AreaRenderer extends BaseRenderer {
 
         int saveCount = canvas.save();
         canvas.clipRect(Math.max(0, startX), mView.getPaddingTop(), Math.min(mView.getWidth(), endX), bottom);
-        for (Graph graph : mChart.getGraphs()) {
+        for (Graph graph : mGraphs) {
             drawAreaGraph(canvas, graph);
         }
         canvas.restoreToCount(saveCount);

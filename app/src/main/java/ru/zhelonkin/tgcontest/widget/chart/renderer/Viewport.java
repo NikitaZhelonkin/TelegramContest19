@@ -5,7 +5,7 @@ import android.animation.PropertyValuesHolder;
 
 import java.util.List;
 
-import androidx.annotation.Keep;
+import android.support.annotation.Keep;
 import ru.zhelonkin.tgcontest.widget.FastOutSlowInInterpolator;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
@@ -31,9 +31,12 @@ public class Viewport {
 
     private ObjectAnimator mChartTopBotAnimator;
 
-    public Viewport(ChartView view, Chart chart) {
+    private List<Graph> mGraphs;
+
+    public Viewport(ChartView view, Chart chart, List<Graph> graphs) {
         mView = view;
         mChart = chart;
+        mGraphs = graphs;
 
         mMinX = calcMinX();
         mMaxX = calcMaxX();
@@ -79,13 +82,13 @@ public class Viewport {
 
         long maxY = 0;
         if (mChart.isStacked()) {
-            float[] sumArr = mChart.calcSums(mChart.getGraphs());
+            float[] sumArr = mChart.calcSums(mGraphs);
             for (float sum : sumArr) {
                 if (sum > maxY) maxY = (long) sum;
             }
             return maxY;
         } else {
-            for (Graph graph : mChart.getGraphs()) {
+            for (Graph graph : mGraphs) {
                 long graphMax = graph.maxY();
                 if (graphMax > maxY) maxY = graphMax;
             }
@@ -105,7 +108,7 @@ public class Viewport {
         float minY = Float.MAX_VALUE;
         float maxY = Float.MIN_VALUE;
         float[] sumArr = new float[mChart.getXValues().size()];
-        for (Graph graph : mChart.getGraphs()) {
+        for (Graph graph : mGraphs) {
             if (!graph.isVisible()) continue;
             for (int i = startIndex; i < endIndex && i < mChart.getXValues().size(); i++) {
                 if (mChart.getY(graph, i) < minY) {
@@ -124,8 +127,12 @@ public class Viewport {
             }
         }
         float[] result = new float[2];
-        //TODO use non zero minY  for line graph
-        result[0] = 0;//minY == Float.MAX_VALUE ? 0 : (minY - mChart.minY()) / mChart.rangeY();
+
+        if(Graph.TYPE_LINE.equals(mChart.getType())){
+            result[0] = minY == Float.MAX_VALUE ? 0 : (minY - minY()) / rangeY();
+        }else {
+            result[0] = 0;
+        }
         result[1] = maxY == Float.MIN_VALUE ? 1 : (maxY - minY()) / rangeY();
         return result;
     }
