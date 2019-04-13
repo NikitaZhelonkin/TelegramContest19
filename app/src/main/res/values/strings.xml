@@ -3,4 +3,5 @@
     <string name="chart_title">Chart #%d</string>
     <string name="switch_theme">Switch theme</string>
     <string name="range_format">%s - %s</string>
+    <string name="percent">%d%%</string>
 </resources>

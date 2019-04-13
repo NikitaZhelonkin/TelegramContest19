@@ -151,7 +151,6 @@ public class ChartView extends FrameLayout {
             mChartRendererSecondary = null;
             mViewportSecondary = null;
         }
-
         mAxisesRenderer = new AxisesRenderer(this, mViewport, mGridPaint, mTextPaint, mTextPadding);
         invalidate();
     }
@@ -258,7 +257,6 @@ public class ChartView extends FrameLayout {
                 showPopup(target);
             }
             mTargetPosition = target;
-            invalidate();
         }
     }
 

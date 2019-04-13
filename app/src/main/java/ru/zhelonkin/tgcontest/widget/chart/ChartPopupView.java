@@ -1,17 +1,20 @@
 package ru.zhelonkin.tgcontest.widget.chart;
 
 import android.content.Context;
+import android.content.res.TypedArray;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
@@ -45,38 +48,38 @@ public class ChartPopupView extends LinearLayout {
         init(context);
     }
 
-    private void init(Context context){
+    private void init(Context context) {
         LayoutInflater inflater = LayoutInflater.from(context);
-        View v= inflater.inflate(R.layout.popup_chart, this);
+        View v = inflater.inflate(R.layout.popup_chart, this);
         mXValueView = v.findViewById(R.id.xValue);
         DynamicLinearLayout valuesLayout = v.findViewById(R.id.values_layout);
-        valuesLayout.setAdapter(mAdapter = new ChartPopupView.Adapter());
+        valuesLayout.setAdapter(mAdapter = new ChartPopupView.Adapter(context));
         setOrientation(VERTICAL);
     }
 
-    public void show(boolean animate){
-        if(animate){
-            if(mIsShowing) return;
+    public void show(boolean animate) {
+        if (animate) {
+            if (mIsShowing) return;
             animate().cancel();
             animate().alpha(1).setDuration(200).start();
-        }else {
+        } else {
             setAlpha(1);
         }
         mIsShowing = true;
     }
 
-    public void hide(boolean animate){
-        if(animate){
-            if(!mIsShowing) return;
+    public void hide(boolean animate) {
+        if (animate) {
+            if (!mIsShowing) return;
             animate().cancel();
             animate().alpha(0).setDuration(200).start();
-        }else {
+        } else {
             setAlpha(0);
         }
         mIsShowing = false;
     }
 
-    public boolean isShowing(){
+    public boolean isShowing() {
         return mIsShowing;
     }
 
@@ -87,22 +90,43 @@ public class ChartPopupView extends LinearLayout {
 
     private static class Adapter extends DynamicViewDelegate.Adapter<Adapter.ViewHolder> {
 
-        private Formatter mValueFormatter = new SimpleNumberFormatter();
+        private Formatter mValueFormatter = new CachingFormatter(new SimpleNumberFormatter());
 
-        private Chart mChart;
-        private int mPointPosition;
-        private List<Graph> mGraphs;
+        private List<Item> mItems;
+        private long mSumm;
+        private boolean mPercentage;
+
+        private int mDefaultColor;
+
+        private Adapter(Context context){
+           TypedArray a =  context.obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
+           mDefaultColor = a.getColor(0, 0);
+           a.recycle();
+        }
 
         void setData(Chart chart, int position) {
-            mChart = chart;
-            mPointPosition = position;
-            mGraphs = mChart.getVisibleGraphs();
+            mItems = new ArrayList<>();
+            mPercentage = chart.isPercentage();
+            boolean showAll = chart.isStacked() && !chart.isPercentage();
+            mSumm = 0;
+            for (Graph graph : chart.getVisibleGraphs()) {
+                long value = graph.getPoints().get(position).y;
+                mItems.add(new Item(
+                        value,
+                        graph.getName(),
+                        graph.getColor()));
+                mSumm += value;
+
+            }
+            if (showAll) {
+                mItems.add(new Item(mSumm, "All", mDefaultColor));
+            }
             notifyDataChanged();
         }
 
         @Override
         public int getCount() {
-            return mGraphs == null ? 0 : mGraphs.size();
+            return mItems == null ? 0 : mItems.size();
         }
 
         @Override
@@ -113,13 +137,17 @@ public class ChartPopupView extends LinearLayout {
 
         @Override
         protected void onBindViewHolder(ChartPopupView.Adapter.ViewHolder viewHolder, int position, Object payload) {
-            Graph graph = mGraphs.get(position);
-            viewHolder.lineNameView.setText(graph.getName());
-            viewHolder.valueView.setTextColor(graph.getColor());
-            viewHolder.valueView.setText(mValueFormatter.format((long) mChart.getY(graph, mPointPosition)));
+            Context context = viewHolder.itemView.getContext();
+            Item item = mItems.get(position);
+            viewHolder.lineNameView.setText(item.title);
+            viewHolder.valueView.setTextColor(item.color);
+            viewHolder.valueView.setText(mValueFormatter.format(item.value));
+            viewHolder.percentView.setText(context.getString(R.string.percent, (100 * item.value) / mSumm));
+            viewHolder.percentView.setVisibility(mPercentage ? View.VISIBLE : View.GONE);
         }
 
         class ViewHolder extends DynamicViewDelegate.ViewHolder {
+            TextView percentView;
             TextView valueView;
             TextView lineNameView;
 
@@ -127,6 +155,19 @@ public class ChartPopupView extends LinearLayout {
                 super(itemView);
                 valueView = itemView.findViewById(R.id.value);
                 lineNameView = itemView.findViewById(R.id.line_name);
+                percentView = itemView.findViewById(R.id.percent);
+            }
+        }
+
+        private class Item {
+            long value;
+            String title;
+            int color;
+
+            Item(long value, String title, int color) {
+                this.value = value;
+                this.title = title;
+                this.color = color;
             }
         }
     }

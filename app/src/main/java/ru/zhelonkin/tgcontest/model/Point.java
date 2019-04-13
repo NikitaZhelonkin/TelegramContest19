@@ -2,8 +2,8 @@ package ru.zhelonkin.tgcontest.model;
 
 public class Point {
 
-    long x;
-    long y;
+    public long x;
+    public long y;
 
     Point() {
     }
