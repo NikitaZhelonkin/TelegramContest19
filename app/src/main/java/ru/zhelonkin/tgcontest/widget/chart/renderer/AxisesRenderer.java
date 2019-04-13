@@ -12,7 +12,6 @@ import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.NumberFormatter;
-import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.utils.Alpha;
 import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
@@ -46,11 +45,11 @@ public class AxisesRenderer extends BaseRenderer {
 
     @Override
     public void render(Canvas canvas, int targetPosition) {
-            drawXAxis(canvas);
-            drawYAxis(canvas);
+        drawXAxis(canvas);
+        drawYAxis(canvas);
     }
 
-    public void updateGrid(boolean animate){
+    public void updateGrid(boolean animate) {
         mAxises.updateXGridSize(animate);
         mAxises.updateYGridSize(animate);
     }
@@ -59,7 +58,7 @@ public class AxisesRenderer extends BaseRenderer {
     private void drawYAxis(Canvas canvas) {
         int count = canvas.save();
         canvas.clipRect(mView.getPaddingLeft(), 0, mView.getWidth() - mView.getPaddingRight(), mView.getHeight() - mView.getPaddingBottom());
-        for (int i=0;i<mAxises.mYValues.size();i++) {
+        for (int i = 0; i < mAxises.mYValues.size(); i++) {
             long index = mAxises.mYValues.keyAt(i);
             Axises.Value v = mAxises.mYValues.get(index);
             if (v != null && v.getAlpha() != 0) {
@@ -76,7 +75,7 @@ public class AxisesRenderer extends BaseRenderer {
 
 
     private void drawXAxis(Canvas canvas) {
-        for (int i=0;i<mAxises.mXValues.size();i++) {
+        for (int i = 0; i < mAxises.mXValues.size(); i++) {
             long index = mAxises.mXValues.keyAt(i);
             Axises.Value v = mAxises.mXValues.get(index);
             if (v != null && v.getAlpha() != 0) {
@@ -103,7 +102,7 @@ public class AxisesRenderer extends BaseRenderer {
             long gridSize = calcXGridSize(rangeY, X_GRID_COUNT);
             if (mXGridSize == gridSize) return;
             mXGridSize = gridSize;
-            for (int i=0;i<mXValues.size();i++) {
+            for (int i = 0; i < mXValues.size(); i++) {
                 long index = mXValues.keyAt(i);
                 Value v = mXValues.get(index);
                 if (v != null) {
@@ -111,7 +110,7 @@ public class AxisesRenderer extends BaseRenderer {
                 }
             }
             for (long i = getViewport().minX(); i < getViewport().maxX(); i += gridSize) {
-                if (mXValues.indexOfKey(i)<0) {
+                if (mXValues.indexOfKey(i) < 0) {
                     Value value = new Axises.Value(i);
                     mXValues.put(value.value, value);
                     value.setVisible(true, animate);
@@ -128,14 +127,14 @@ public class AxisesRenderer extends BaseRenderer {
                 long index = mYValues.keyAt(i);
                 Value v = mYValues.get(index);
                 if (v != null) {
-                    float targetPoint = getViewport().targetPointY(i);
-                    boolean targetVisible = targetPoint >= mView.getPaddingTop();
+                    float targetPoint = getViewport().targetPointY(v.value);
+                    boolean targetVisible = targetPoint >= mView.getPaddingTop() && targetPoint <= mView.getHeight() - mView.getPaddingBottom();
                     v.setVisible(targetVisible && (index - getViewport().minY()) % gridSize == 0, animate);
                 }
             }
             for (long i = getViewport().minY(); i <= getViewport().maxY(); i += gridSize) {
                 float targetPoint = getViewport().targetPointY(i);
-                boolean targetVisible = targetPoint >= mView.getPaddingTop();
+                boolean targetVisible = targetPoint >= mView.getPaddingTop() && targetPoint <= mView.getHeight() - mView.getPaddingBottom();
                 if (mYValues.indexOfKey(i) < 0 && targetVisible) {
                     Value value = new Value(i);
                     mYValues.put(i, value);

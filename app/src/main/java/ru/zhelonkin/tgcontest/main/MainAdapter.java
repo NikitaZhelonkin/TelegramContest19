@@ -119,7 +119,7 @@ public class MainAdapter extends HolderAdapter<MainAdapter.ChartViewHolder> {
             for (Graph g : chart.getGraphs()) {
                 g.setVisible(g == graph);
             }
-            filtersAdapter.notifyDataChanged();
+            filtersAdapter.notifyDataChanged(FiltersAdapter.PAYLOAD_CHECKBOX);
             chartView.onFiltersChanged();
             chartPreview.onFiltersChanged();
         }

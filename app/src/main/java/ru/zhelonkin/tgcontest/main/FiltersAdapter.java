@@ -1,5 +1,6 @@
 package ru.zhelonkin.tgcontest.main;
 
+import android.animation.ObjectAnimator;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -15,6 +16,8 @@ import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
 import ru.zhelonkin.tgcontest.widget.ShakeAnimator;
 
 public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.ViewHolder> {
+
+    static final String PAYLOAD_CHECKBOX = "checkbox";
 
     public interface Callback {
         void onCheckChanged(Graph graph, boolean checked);
@@ -48,7 +51,7 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
 
     @Override
     protected void onBindViewHolder(ViewHolder viewHolder, int position, Object payload) {
-        viewHolder.bind(mChart.getGraphs().get(position));
+        viewHolder.bind(mChart.getGraphs().get(position), payload);
     }
 
     class ViewHolder extends DynamicViewDelegate.ViewHolder {
@@ -63,7 +66,11 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
             mShakeOffset = itemView.getResources().getDimensionPixelSize(R.dimen.shake_offset);
         }
 
-        void bind(Graph graph) {
+        void bind(Graph graph, Object payload) {
+            if(PAYLOAD_CHECKBOX.equals(payload)){
+                mCheckBox.setChecked(graph.isVisible());
+                return;
+            }
             mCheckBox.setText(graph.getName());
             ColorStateList colorStateList = new ColorStateList(new int[][]{
                     new int[]{android.R.attr.state_checked},
@@ -84,7 +91,7 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
                 if (mChart.getVisibleGraphs().size() < 2 && mCheckBox.isChecked()) {
                     ShakeAnimator.ofView(mCheckBox, mShakeOffset).start();
                 }else {
-                    mCheckBox.setChecked(!mCheckBox.isChecked());
+                    mCheckBox.toggle();
                 }
             });
             itemView.setOnLongClickListener(v -> {

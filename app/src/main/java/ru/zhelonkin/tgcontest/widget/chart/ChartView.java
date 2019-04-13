@@ -148,6 +148,8 @@ public class ChartView extends FrameLayout {
         }else {
             mViewport = new Viewport(this, chart, chart.getGraphs());
             mChartRenderer = createRendererForChart(chart, chart.getGraphs(), mViewport);
+            mChartRendererSecondary = null;
+            mViewportSecondary = null;
         }
 
         mAxisesRenderer = new AxisesRenderer(this, mViewport, mGridPaint, mTextPaint, mTextPadding);
