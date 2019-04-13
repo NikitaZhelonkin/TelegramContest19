@@ -257,6 +257,7 @@ public class ChartView extends FrameLayout {
                 showPopup(target);
             }
             mTargetPosition = target;
+            invalidate();
         }
     }
 
