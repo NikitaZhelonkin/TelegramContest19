@@ -14,6 +14,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
@@ -138,14 +139,14 @@ public class ChartView extends FrameLayout {
 
     public void setChart(@NonNull Chart chart) {
         mChart = chart;
-        if(chart.isYScaled()){
+        if (chart.isYScaled()) {
             List<Graph> graphs = Collections.singletonList(chart.getGraphs().get(0));
             List<Graph> graphsSecondary = Collections.singletonList(chart.getGraphs().get(1));
-            mViewport = new Viewport(this, chart, graphs );
+            mViewport = new Viewport(this, chart, graphs);
             mChartRenderer = createRendererForChart(chart, graphs, mViewport);
-            mViewportSecondary = new Viewport(this, chart, graphsSecondary );
+            mViewportSecondary = new Viewport(this, chart, graphsSecondary);
             mChartRendererSecondary = createRendererForChart(chart, graphsSecondary, mViewportSecondary);
-        }else {
+        } else {
             mViewport = new Viewport(this, chart, chart.getGraphs());
             mChartRenderer = createRendererForChart(chart, chart.getGraphs(), mViewport);
             mChartRendererSecondary = null;
@@ -157,7 +158,7 @@ public class ChartView extends FrameLayout {
 
     public void onFiltersChanged() {
         mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true);
-        if(mViewportSecondary!=null){
+        if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(mViewportSecondary.getChartLeft(), mViewportSecondary.getChartRight(), true);
         }
         mAxisesRenderer.updateGrid(true);
@@ -265,27 +266,33 @@ public class ChartView extends FrameLayout {
         if (!mChartPopupView.isShowing()) {
             mChartPopupView.show(true);
             mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition);
+            updatePopupPosition(targetPosition, false);
         }
     }
 
     private void updatePopup(int targetPosition) {
         if (mChartPopupView.isShowing()) {
             mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition);
+            updatePopupPosition(targetPosition, true);
         }
     }
 
-    private void updatePopupPosition(int targetPosition) {
+    private void updatePopupPosition(int targetPosition, boolean animate) {
         float x = mViewport.pointX(mChart.getXValues().get(targetPosition)) - getPaddingLeft();
         int width = getWidth() - getPaddingLeft() - getPaddingRight();
         mChartPopupView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST),
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
         int popupWidth = mChartPopupView.getMeasuredWidth();
-        float position = x > width / 2f ? x - popupWidth : x;
-        position = Math.max(-getPaddingLeft(), Math.min(width + getPaddingRight() - popupWidth, position));
-        mChartPopupView.setTranslationX(position);
+        int gravity = x > width / 2f ? Gravity.START : Gravity.END;
+        int lastGravity = mChartPopupView.getTranslationX() - mChartPopupView.getPopupOffset() > width / 2f ? Gravity.START : Gravity.END;
+        mChartPopupView.setTranslationX(x + mChartPopupView.getPopupOffset());
+        if (!animate) {
+            mChartPopupView.setPopupOffset(gravity == Gravity.START ? -popupWidth : 0);
+        } else if (lastGravity != gravity) {
+            mChartPopupView.animateOffset(gravity == Gravity.START ? -popupWidth : 0);
+        }
     }
+
 
     private void hidePopup() {
         if (mChartPopupView.isShowing()) {
@@ -293,7 +300,7 @@ public class ChartView extends FrameLayout {
         }
     }
 
-    private BaseRenderer createRendererForChart(Chart chart,  List<Graph> graphList, Viewport viewport) {
+    private BaseRenderer createRendererForChart(Chart chart, List<Graph> graphList, Viewport viewport) {
         String type = chart.getType();
         if (Graph.TYPE_BAR.equals(type)) {
             return new BarRenderer(this, chart, graphList, viewport);

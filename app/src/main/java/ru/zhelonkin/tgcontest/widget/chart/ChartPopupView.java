@@ -1,7 +1,9 @@
 package ru.zhelonkin.tgcontest.widget.chart;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -24,6 +26,7 @@ import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.widget.DynamicLinearLayout;
 import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
+import ru.zhelonkin.tgcontest.widget.FastOutSlowInInterpolator;
 
 public class ChartPopupView extends LinearLayout {
 
@@ -34,6 +37,8 @@ public class ChartPopupView extends LinearLayout {
     private boolean mIsShowing;
 
     private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("E, dd MMM YYYY"));
+
+    private float mPopupOffset;
 
     public ChartPopupView(@NonNull Context context) {
         this(context, null);
@@ -77,6 +82,25 @@ public class ChartPopupView extends LinearLayout {
             setAlpha(0);
         }
         mIsShowing = false;
+    }
+
+    public void animateOffset(int offset){
+        ObjectAnimator animator = ObjectAnimator.ofFloat(this, "popupOffset",offset);
+        animator.setAutoCancel(true);
+        animator.setDuration(300);
+        animator.setInterpolator(new FastOutSlowInInterpolator());
+        animator.start();
+    }
+
+    @Keep
+    public float getPopupOffset() {
+        return mPopupOffset;
+    }
+
+    @Keep
+    public void setPopupOffset(float popupOffset) {
+        setTranslationX(getTranslationX() - mPopupOffset + popupOffset);
+        mPopupOffset = popupOffset;
     }
 
     public boolean isShowing() {
