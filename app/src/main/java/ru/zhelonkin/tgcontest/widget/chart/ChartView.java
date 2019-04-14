@@ -157,6 +157,7 @@ public class ChartView extends FrameLayout {
     }
 
     public void onFiltersChanged() {
+        updatePopup(mTargetPosition);
         mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true);
         if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(mViewportSecondary.getChartLeft(), mViewportSecondary.getChartRight(), true);
@@ -296,6 +297,7 @@ public class ChartView extends FrameLayout {
 
     private void hidePopup() {
         if (mChartPopupView.isShowing()) {
+            mChartPopupView.clearData();
             mChartPopupView.hide(true);
         }
     }

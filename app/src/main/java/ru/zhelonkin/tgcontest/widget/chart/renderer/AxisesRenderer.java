@@ -176,8 +176,6 @@ public class AxisesRenderer extends BaseRenderer {
             private float alpha = 1;
             private float targetAlpha = 1;
 
-            private ObjectAnimator animator;
-
             Value(long value) {
                 this.value = value;
             }
@@ -200,24 +198,21 @@ public class AxisesRenderer extends BaseRenderer {
                     return;
                 }
                 if (visible && targetAlpha != 1) {
-                    targetAlpha = 1;
-                    if (animator != null) animator.cancel();
-                    animator = ObjectAnimator.ofFloat(this, "alpha", 1);
-                    animator.addUpdateListener(it -> {
-                        mView.invalidate();
-                    });
-                    animator.setDuration(250);
-                    animator.start();
+                    animateAlpha(1);
                 } else if (!visible && targetAlpha != 0) {
-                    targetAlpha = 0;
-                    if (animator != null) animator.cancel();
-                    animator = ObjectAnimator.ofFloat(this, "alpha", 0);
-                    animator.addUpdateListener(it -> {
-                        mView.invalidate();
-                    });
-                    animator.setDuration(250);
-                    animator.start();
+                    animateAlpha(0);
                 }
+            }
+
+            private void animateAlpha(float alpha) {
+                targetAlpha = alpha;
+                ObjectAnimator animator = ObjectAnimator.ofFloat(this, "alpha", alpha);
+                animator.setAutoCancel(true);
+                animator.addUpdateListener(it -> {
+                    mView.invalidate();
+                });
+                animator.setDuration(250);
+                animator.start();
             }
 
             @Override

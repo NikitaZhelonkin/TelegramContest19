@@ -1,5 +1,6 @@
 package ru.zhelonkin.tgcontest.widget.chart;
 
+import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -7,7 +8,6 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +27,8 @@ import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.widget.DynamicLinearLayout;
 import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
 import ru.zhelonkin.tgcontest.widget.FastOutSlowInInterpolator;
+import ru.zhelonkin.tgcontest.widget.diffutil.DiffUtil;
+import ru.zhelonkin.tgcontest.widget.diffutil.ListUpdateCallback;
 
 public class ChartPopupView extends LinearLayout {
 
@@ -60,6 +62,12 @@ public class ChartPopupView extends LinearLayout {
         DynamicLinearLayout valuesLayout = v.findViewById(R.id.values_layout);
         valuesLayout.setAdapter(mAdapter = new ChartPopupView.Adapter(context));
         setOrientation(VERTICAL);
+
+        LayoutTransition lt = new LayoutTransition();
+        lt.setDuration(250);
+        lt.setStartDelay(LayoutTransition.APPEARING, 200);
+        lt.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 200);
+        valuesLayout.setLayoutTransition(lt);
     }
 
     public void show(boolean animate) {
@@ -84,8 +92,8 @@ public class ChartPopupView extends LinearLayout {
         mIsShowing = false;
     }
 
-    public void animateOffset(int offset){
-        ObjectAnimator animator = ObjectAnimator.ofFloat(this, "popupOffset",offset);
+    public void animateOffset(int offset) {
+        ObjectAnimator animator = ObjectAnimator.ofFloat(this, "popupOffset", offset);
         animator.setAutoCancel(true);
         animator.setDuration(300);
         animator.setInterpolator(new FastOutSlowInInterpolator());
@@ -112,7 +120,11 @@ public class ChartPopupView extends LinearLayout {
         mAdapter.setData(chart, position);
     }
 
-    private static class Adapter extends DynamicViewDelegate.Adapter<Adapter.ViewHolder> {
+    void clearData() {
+        mAdapter.setData(null, 0);
+    }
+
+    private static class Adapter extends DynamicViewDelegate.Adapter<Adapter.ViewHolder> implements ListUpdateCallback {
 
         private Formatter mValueFormatter = new CachingFormatter(new SimpleNumberFormatter());
 
@@ -122,30 +134,34 @@ public class ChartPopupView extends LinearLayout {
 
         private int mDefaultColor;
 
-        private Adapter(Context context){
-           TypedArray a =  context.obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
-           mDefaultColor = a.getColor(0, 0);
-           a.recycle();
+        private Adapter(Context context) {
+            TypedArray a = context.obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
+            mDefaultColor = a.getColor(0, 0);
+            a.recycle();
         }
 
         void setData(Chart chart, int position) {
-            mItems = new ArrayList<>();
-            mPercentage = chart.isPercentage();
-            boolean showAll = chart.isStacked() && !chart.isPercentage();
-            mSumm = 0;
-            for (Graph graph : chart.getVisibleGraphs()) {
-                long value = graph.getPoints().get(position).y;
-                mItems.add(new Item(
-                        value,
-                        graph.getName(),
-                        graph.getColor()));
-                mSumm += value;
+            List<Item> mItems = new ArrayList<>();
+            if (chart != null) {
+                mPercentage = chart.isPercentage();
+                boolean showAll = chart.isStacked() && !chart.isPercentage();
+                mSumm = 0;
+                for (Graph graph : chart.getVisibleGraphs()) {
+                    long value = graph.getPoints().get(position).y;
+                    mItems.add(new Item(
+                            value,
+                            graph.getName(),
+                            graph.getColor()));
+                    mSumm += value;
 
+                }
+                if (showAll) {
+                    mItems.add(new Item(mSumm, "All", mDefaultColor));
+                }
             }
-            if (showAll) {
-                mItems.add(new Item(mSumm, "All", mDefaultColor));
-            }
-            notifyDataChanged();
+            DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtilCallback(this.mItems, mItems), true);
+            this.mItems = mItems;
+            result.dispatchUpdatesTo(this);
         }
 
         @Override
@@ -192,6 +208,38 @@ public class ChartPopupView extends LinearLayout {
                 this.value = value;
                 this.title = title;
                 this.color = color;
+            }
+        }
+
+        private class DiffUtilCallback extends DiffUtil.Callback {
+
+
+            private List<Item> oldValue;
+            private List<Item> newValue;
+
+            DiffUtilCallback(List<Item> oldValue, List<Item> newValue) {
+                this.oldValue = oldValue;
+                this.newValue = newValue;
+            }
+
+            @Override
+            public int getOldListSize() {
+                return oldValue == null ? 0 : oldValue.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newValue == null ? 0 : newValue.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int i, int i1) {
+                return oldValue.get(i).color == newValue.get(i1).color;
+            }
+
+            @Override
+            public boolean areContentsTheSame(int i, int i1) {
+                return false;
             }
         }
     }

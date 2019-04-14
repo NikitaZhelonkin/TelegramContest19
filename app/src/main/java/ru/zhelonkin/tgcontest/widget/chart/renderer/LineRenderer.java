@@ -21,7 +21,6 @@ public class LineRenderer extends BaseRenderer {
     private Chart mChart;
     private List<Graph> mGraphs;
     private int mSurfaceColor;
-    private Path mGraphPath = new Path();
     private Paint mXPaint;
 
     public LineRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport, Paint gridPaint,
@@ -37,7 +36,6 @@ public class LineRenderer extends BaseRenderer {
         mGraphPaint.setStrokeWidth(lineWidth);
         mGraphPaint.setStyle(Paint.Style.STROKE);
         mGraphPaint.setStrokeCap(Paint.Cap.SQUARE);
-        mGraphPaint.setStrokeJoin(Paint.Join.BEVEL);
     }
 
     @Override
@@ -53,11 +51,7 @@ public class LineRenderer extends BaseRenderer {
     private void drawLineGraph(Canvas canvas, Graph graph, int targetPosition) {
         mGraphPaint.setColor(graph.getColor());
         mGraphPaint.setAlpha(Alpha.toInt(graph.getAlpha()));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            drawLineWithPath(canvas, graph);
-        } else {
-            drawLineDefault(canvas, graph);
-        }
+        drawLineDefault(canvas, graph);
         if (targetPosition != ChartView.INVALID_TARGET && graph.isVisible())
             drawDot(canvas, graph, targetPosition);
     }
@@ -81,15 +75,6 @@ public class LineRenderer extends BaseRenderer {
         canvas.drawLines(lineBuffer, mGraphPaint);
     }
 
-    private void drawLineWithPath(Canvas canvas, Graph graph) {
-        mGraphPath.reset();
-        List<Point> points = graph.getPoints();
-        mGraphPath.moveTo(pointX(mChart.getX(graph, 0)), pointY(mChart.getY(graph, 0)));
-        for (int i = 1; i < points.size(); i++) {
-            mGraphPath.lineTo(pointX(mChart.getX(graph, i)), pointY(mChart.getY(graph, i)));
-        }
-        canvas.drawPath(mGraphPath, mGraphPaint);
-    }
 
     private void drawDot(Canvas canvas, Graph graph, int targetPosition) {
         mGraphPaint.setColor(graph.getColor());
