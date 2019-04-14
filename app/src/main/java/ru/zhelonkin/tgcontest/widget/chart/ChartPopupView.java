@@ -1,12 +1,16 @@
 package ru.zhelonkin.tgcontest.widget.chart;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.res.TypedArray;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.util.DiffUtil;
+import android.support.v7.util.ListUpdateCallback;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,11 +28,10 @@ import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.formatter.SimpleNumberFormatter;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
+import ru.zhelonkin.tgcontest.utils.ThemeUtils;
 import ru.zhelonkin.tgcontest.widget.DynamicLinearLayout;
 import ru.zhelonkin.tgcontest.widget.DynamicViewDelegate;
 import ru.zhelonkin.tgcontest.widget.FastOutSlowInInterpolator;
-import ru.zhelonkin.tgcontest.widget.diffutil.DiffUtil;
-import ru.zhelonkin.tgcontest.widget.diffutil.ListUpdateCallback;
 
 public class ChartPopupView extends LinearLayout {
 
@@ -41,6 +44,8 @@ public class ChartPopupView extends LinearLayout {
     private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("E, dd MMM YYYY"));
 
     private float mPopupOffset;
+
+    private Drawable mArrowDrawable;
 
     public ChartPopupView(@NonNull Context context) {
         this(context, null);
@@ -63,17 +68,16 @@ public class ChartPopupView extends LinearLayout {
         valuesLayout.setAdapter(mAdapter = new ChartPopupView.Adapter(context));
         setOrientation(VERTICAL);
 
-        LayoutTransition lt = new LayoutTransition();
-        lt.setDuration(250);
-        lt.setStartDelay(LayoutTransition.APPEARING, 200);
-        lt.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 200);
-        valuesLayout.setLayoutTransition(lt);
+        mArrowDrawable = context.getDrawable(R.drawable.ic_arrow_right);
+        mArrowDrawable.setTint(ThemeUtils.getColor(context, android.R.attr.textColorPrimary, 0));
     }
 
     public void show(boolean animate) {
+        setVisibility(View.VISIBLE);
         if (animate) {
             if (mIsShowing) return;
             animate().cancel();
+            animate().setListener(null);
             animate().alpha(1).setDuration(200).start();
         } else {
             setAlpha(1);
@@ -85,8 +89,16 @@ public class ChartPopupView extends LinearLayout {
         if (animate) {
             if (!mIsShowing) return;
             animate().cancel();
+            animate().setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    setVisibility(View.INVISIBLE);
+                }
+            });
             animate().alpha(0).setDuration(200).start();
         } else {
+            setVisibility(View.INVISIBLE);
             setAlpha(0);
         }
         mIsShowing = false;
@@ -115,8 +127,13 @@ public class ChartPopupView extends LinearLayout {
         return mIsShowing;
     }
 
+    public void setDateFormatter(Formatter dateFormatter) {
+        mDateFormatter = new CachingFormatter(dateFormatter);
+    }
+
     void bindData(Chart chart, int position) {
         mXValueView.setText(mDateFormatter.format(chart.getXValues().get(position)));
+        mXValueView.setCompoundDrawablesWithIntrinsicBounds(null, null, isClickable() ? mArrowDrawable : null, null);
         mAdapter.setData(chart, position);
     }
 
@@ -135,9 +152,7 @@ public class ChartPopupView extends LinearLayout {
         private int mDefaultColor;
 
         private Adapter(Context context) {
-            TypedArray a = context.obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
-            mDefaultColor = a.getColor(0, 0);
-            a.recycle();
+            mDefaultColor = ThemeUtils.getColor(context, android.R.attr.textColorPrimary, 0);
         }
 
         void setData(Chart chart, int position) {
@@ -158,10 +173,13 @@ public class ChartPopupView extends LinearLayout {
                 if (showAll) {
                     mItems.add(new Item(mSumm, "All", mDefaultColor));
                 }
+                DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtilCallback(this.mItems, mItems), true);
+                this.mItems = mItems;
+                result.dispatchUpdatesTo(this);
+            }else {
+                this.mItems = mItems;
+                notifyDataChanged();
             }
-            DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtilCallback(this.mItems, mItems), true);
-            this.mItems = mItems;
-            result.dispatchUpdatesTo(this);
         }
 
         @Override
@@ -182,7 +200,8 @@ public class ChartPopupView extends LinearLayout {
             viewHolder.lineNameView.setText(item.title);
             viewHolder.valueView.setTextColor(item.color);
             viewHolder.valueView.setText(mValueFormatter.format(item.value));
-            viewHolder.percentView.setText(context.getString(R.string.percent, (100 * item.value) / mSumm));
+            long percent = mSumm == 0 ? 0 : (100 * item.value) / mSumm;
+            viewHolder.percentView.setText(context.getString(R.string.percent, percent));
             viewHolder.percentView.setVisibility(mPercentage ? View.VISIBLE : View.GONE);
         }
 

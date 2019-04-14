@@ -16,6 +16,7 @@ import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 import ru.zhelonkin.tgcontest.R;
+import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.AreaRenderer;
@@ -34,6 +36,10 @@ import ru.zhelonkin.tgcontest.widget.chart.renderer.Renderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.Viewport;
 
 public class ChartView extends FrameLayout {
+
+    public interface OnPopupClickedListener {
+        void onPopupClicked(long date);
+    }
 
     public static final int INVALID_TARGET = -1;
 
@@ -76,6 +82,8 @@ public class ChartView extends FrameLayout {
     private ChartPopupView mChartPopupView;
 
     private Path mCornerPath = new Path();
+
+    private OnPopupClickedListener mOnPopupClickedListener;
 
     public ChartView(Context context) {
         super(context);
@@ -133,8 +141,21 @@ public class ChartView extends FrameLayout {
         LayoutParams layoutParams = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         layoutParams.setMargins(0, 0, 0, 0);
         addView(mChartPopupView, layoutParams);
-
         mGraphAnimator = new GraphAnimator(this);
+    }
+
+    private OnClickListener mOnPopupClickListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (mOnPopupClickedListener != null && mTargetPosition != INVALID_TARGET) {
+                mOnPopupClickedListener.onPopupClicked(mChart.getXValues().get(mTargetPosition));
+            }
+        }
+    };
+
+    public void setOnPopupClickedListener(OnPopupClickedListener onPopupClickedListener) {
+        mOnPopupClickedListener = onPopupClickedListener;
+        mChartPopupView.setOnClickListener(onPopupClickedListener != null ? mOnPopupClickListener : null);
     }
 
     public void setChart(@NonNull Chart chart) {
@@ -152,8 +173,20 @@ public class ChartView extends FrameLayout {
             mChartRendererSecondary = null;
             mViewportSecondary = null;
         }
-        mAxisesRenderer = new AxisesRenderer(this,mChart, mViewport, mViewportSecondary, mGridPaint, mTextPaint, mTextPadding);
+        mAxisesRenderer = new AxisesRenderer(this, mChart, mViewport, mViewportSecondary, mGridPaint, mTextPaint, mTextPadding);
+        setTarget(INVALID_TARGET);
         invalidate();
+    }
+
+
+    public void setAxisDateFormatter(Formatter dateFormatter) {
+        if(mAxisesRenderer!=null){
+            mAxisesRenderer.setDateFormatter(dateFormatter);
+        }
+    }
+
+    public void setPopupDateFormatter(Formatter dateFormatter){
+        mChartPopupView.setDateFormatter(dateFormatter);
     }
 
     public void onFiltersChanged() {
@@ -168,6 +201,7 @@ public class ChartView extends FrameLayout {
 
     public void setChartLeftAndRight(float left, float right, boolean animate) {
         if (mChart == null) return;
+        hidePopup();
         mViewport.setChartLeftAndRight(left, right, animate);
         if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(left, right, animate);
@@ -215,6 +249,7 @@ public class ChartView extends FrameLayout {
             return false;
 
         final int action = event.getAction();
+        removeCallbacks(mDismissPopupRunnable);
 
         switch (action & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
@@ -232,13 +267,15 @@ public class ChartView extends FrameLayout {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 mIsDragging = false;
-                setTarget(INVALID_TARGET);
+                postDelayed(mDismissPopupRunnable, 2000);
                 break;
         }
 
         return true;
 
     }
+
+    private Runnable mDismissPopupRunnable = () -> setTarget(INVALID_TARGET);
 
     private void attemptClaimDrag() {
         if (getParent() != null) {
@@ -297,7 +334,6 @@ public class ChartView extends FrameLayout {
 
     private void hidePopup() {
         if (mChartPopupView.isShowing()) {
-            mChartPopupView.clearData();
             mChartPopupView.hide(true);
         }
     }

@@ -19,6 +19,23 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/zoom_out"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginRight="16dp"
+        android:text="@string/zoom_out"
+        android:textColor="?android:colorAccent"
+        android:textStyle="bold"
+        android:visibility="visible"
+        android:drawablePadding="4dp"
+        app:layout_constraintBaseline_toBaselineOf="@id/title"
+        android:drawableStart="@drawable/ic_zoom_out"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
         android:id="@+id/range"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

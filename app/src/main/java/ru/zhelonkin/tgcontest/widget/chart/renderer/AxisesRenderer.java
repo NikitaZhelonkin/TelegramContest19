@@ -8,6 +8,8 @@ import android.text.TextPaint;
 import android.util.LongSparseArray;
 import android.view.View;
 
+import java.util.concurrent.TimeUnit;
+
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
@@ -18,8 +20,9 @@ import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
 public class AxisesRenderer extends BaseRenderer {
 
-    private final Formatter DATE_FORMATTER = new CachingFormatter(new DateFormatter("MMM dd"));
     private final Formatter NUMBER_FORMATTER = new CachingFormatter(new NumberFormatter());
+
+    private static final long HOUR = TimeUnit.HOURS.toMillis(1);
 
     private static final int X_GRID_COUNT = 6;
     private static final int Y_GRID_COUNT = 4;
@@ -43,6 +46,8 @@ public class AxisesRenderer extends BaseRenderer {
 
     private int mDefaultTextColor;
 
+    private Formatter mDateFormatter =  new CachingFormatter(new DateFormatter("MMM dd"));
+
     public AxisesRenderer(ChartView view, Chart chart, Viewport viewport, Viewport viewportSecondary,
                           Paint gridPaint,
                           TextPaint textPaint,
@@ -55,6 +60,10 @@ public class AxisesRenderer extends BaseRenderer {
         mGridPaint = gridPaint;
         mTextPaint = textPaint;
         mDefaultTextColor = mTextPaint.getColor();
+    }
+
+    public void setDateFormatter(Formatter dateFormatter) {
+        mDateFormatter = new CachingFormatter(dateFormatter);
     }
 
     @Override
@@ -78,7 +87,7 @@ public class AxisesRenderer extends BaseRenderer {
             if (v != null && v.getAlpha() != 0) {
                 //draw primary axis
                 float y = getViewport().pointY(v.value);
-                mGridPaint.setAlpha(Alpha.toInt(yScaled ? 0.1f : (v.getAlpha() * 0.1f)));
+                mGridPaint.setAlpha(Alpha.toInt((v.getAlpha() * 0.1f)));
                 canvas.drawLine(mView.getPaddingLeft(), y, mView.getWidth() - mView.getPaddingRight(), y, mGridPaint);
                 mTextPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.5f));
                 if (yScaled) {
@@ -111,15 +120,14 @@ public class AxisesRenderer extends BaseRenderer {
             if (v != null && v.getAlpha() != 0) {
                 float x = getViewport().pointX(v.value);
                 mTextPaint.setAlpha(Alpha.toInt(v.getAlpha() * 0.5f));
-                canvas.drawText(DATE_FORMATTER.format(v.value), x, mView.getHeight() - mTextPaint.descent(), mTextPaint);
+                canvas.drawText(mDateFormatter.format(v.value), x, mView.getHeight() - mTextPaint.descent(), mTextPaint);
             }
         }
     }
 
-
     private void updateXGridSize(boolean animate) {
         long rangeY = (long) (getViewport().chartScaleX() * (long) getViewport().rangeX());
-        long gridSize = calcXGridSize(rangeY, X_GRID_COUNT);
+        long gridSize = Math.max(HOUR, calcXGridSize(rangeY/HOUR, X_GRID_COUNT) * HOUR);
         if (mXGridSize == gridSize) return;
         mXGridSize = gridSize;
         for (int i = 0; i < mXValues.size(); i++) {

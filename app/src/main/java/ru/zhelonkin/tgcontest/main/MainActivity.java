@@ -4,6 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 
+import android.support.annotation.NonNull;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
@@ -30,8 +35,10 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ListView listView = findViewById(R.id.list_view);
-        listView.setAdapter(mMainAdapter);
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
+        recyclerView.setAdapter(mMainAdapter);
 
 
         ChartData chartData = (ChartData) getLastNonConfigurationInstance();

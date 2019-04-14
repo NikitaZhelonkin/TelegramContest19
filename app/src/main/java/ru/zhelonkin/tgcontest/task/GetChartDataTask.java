@@ -19,6 +19,7 @@ import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.ChartData;
 import ru.zhelonkin.tgcontest.model.Result;
 import ru.zhelonkin.tgcontest.model.deserializer.ChartParser;
+import ru.zhelonkin.tgcontest.utils.IOUtils;
 
 public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
 
@@ -45,11 +46,11 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
     protected Result<ChartData> doInBackground(Void... voids) {
         try {
             List<Chart> charts = new ArrayList<>();
-            charts.addAll(parseJSON(mAssetManager.open("overview_1.json")));
-            charts.addAll(parseJSON(mAssetManager.open("overview_2.json")));
-            charts.addAll(parseJSON(mAssetManager.open("overview_3.json")));
-            charts.addAll(parseJSON(mAssetManager.open("overview_4.json")));
-            charts.addAll(parseJSON(mAssetManager.open("overview_5.json")));
+            charts.addAll(parseJSON(mAssetManager.open("1/overview.json")));
+            charts.addAll(parseJSON(mAssetManager.open("2/overview.json")));
+            charts.addAll(parseJSON(mAssetManager.open("3/overview.json")));
+            charts.addAll(parseJSON(mAssetManager.open("4/overview.json")));
+            charts.addAll(parseJSON(mAssetManager.open("5/overview.json")));
             return new Result<>(new ChartData(charts));
         } catch (IOException | JSONException e) {
             return new Result<>(e);
@@ -68,7 +69,7 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
 
 
     private List<Chart> parseJSON(InputStream is) throws IOException, JSONException {
-        String data = readToString(is);
+        String data = IOUtils.readToString(is);
         ChartParser chartParser = new ChartParser();
         JSONArray array = null;
         try{
@@ -88,25 +89,5 @@ public class GetChartDataTask extends AsyncTask<Void, Void, Result<ChartData>> {
 
     }
 
-    private String readToString(InputStream is) throws IOException {
-        BufferedReader reader = null;
-        try{
-            reader = new BufferedReader(new InputStreamReader(is));
-            StringBuilder total = new StringBuilder();
-            for (String line; (line = reader.readLine()) != null; ) {
-                total.append(line).append('\n');
-            }
-            return total.toString();
-        }finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    //do nothing
-                }
-            }
-        }
-
-    }
 
 }

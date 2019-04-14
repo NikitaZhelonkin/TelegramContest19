@@ -1,35 +1,47 @@
 package ru.zhelonkin.tgcontest.main;
 
-import android.support.constraint.ConstraintLayout;
+import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
-import android.support.annotation.NonNull;
 import ru.zhelonkin.tgcontest.R;
 import ru.zhelonkin.tgcontest.formatter.CachingFormatter;
 import ru.zhelonkin.tgcontest.formatter.DateFormatter;
 import ru.zhelonkin.tgcontest.formatter.Formatter;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.ChartData;
+import ru.zhelonkin.tgcontest.model.ChartWithZoom;
 import ru.zhelonkin.tgcontest.model.Graph;
+import ru.zhelonkin.tgcontest.task.GetDayChartTask;
+import ru.zhelonkin.tgcontest.utils.ThemeUtils;
 import ru.zhelonkin.tgcontest.utils.ViewUtils;
 import ru.zhelonkin.tgcontest.widget.DynamicFlowLayout;
-import ru.zhelonkin.tgcontest.widget.HolderAdapter;
 import ru.zhelonkin.tgcontest.widget.RangeSeekBar;
 import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
-public class MainAdapter extends HolderAdapter<MainAdapter.ChartViewHolder> {
+public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolder> {
 
     private ChartData mChartData;
+
+    public MainAdapter() {
+
+    }
 
     public void setChartData(ChartData chartData) {
         mChartData = chartData;
         notifyDataSetChanged();
     }
+
 
     @NonNull
     @Override
@@ -44,26 +56,23 @@ public class MainAdapter extends HolderAdapter<MainAdapter.ChartViewHolder> {
     }
 
     @Override
-    public int getCount() {
+    public int getItemCount() {
         return mChartData == null ? 0 : mChartData.getCharts().size();
     }
 
-    @Override
-    public Object getItem(int position) {
-        return mChartData.getCharts().get(position);
-    }
 
     @Override
     public long getItemId(int position) {
         return position;
     }
 
-    class ChartViewHolder extends HolderAdapter.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
+    class ChartViewHolder extends RecyclerView.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
             FiltersAdapter.Callback {
 
         private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("dd MMM YYYY"));
 
         private TextView titleView;
+        private TextView zoomOutView;
         private TextView rangeView;
         private ChartView chartView;
         private ChartView chartPreview;
@@ -73,6 +82,7 @@ public class MainAdapter extends HolderAdapter<MainAdapter.ChartViewHolder> {
         ChartViewHolder(@NonNull View itemView) {
             super(itemView);
             titleView = itemView.findViewById(R.id.title);
+            zoomOutView = itemView.findViewById(R.id.zoom_out);
             rangeView = itemView.findViewById(R.id.range);
             chartView = itemView.findViewById(R.id.chart_view);
             chartPreview = itemView.findViewById(R.id.chart_preview);
@@ -81,29 +91,103 @@ public class MainAdapter extends HolderAdapter<MainAdapter.ChartViewHolder> {
             DynamicFlowLayout linesLayout = itemView.findViewById(R.id.line_list_layout);
             linesLayout.setAdapter(filtersAdapter = new FiltersAdapter());
             filtersAdapter.setCallback(this);
+            int colorAccent = ThemeUtils.getColor(itemView.getContext(), android.R.attr.colorAccent, 0);
+            Drawable drawable = itemView.getContext().getDrawable(R.drawable.ic_zoom_out);
+            if (drawable != null) drawable.setTint(colorAccent);
+            zoomOutView.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
         }
 
-        void bindView(Chart chart, int position) {
+        void bindView(ChartWithZoom chartWithZoom, int position) {
+            Chart chart = chartWithZoom.getCurrent();
             chartView.setChart(chart);
             chartPreview.setChart(chart);
             filtersAdapter.setGraphs(chart);
-            titleView.setText(itemView.getContext().getString(R.string.chart_title, position + 1));
-
             ViewUtils.onPreDraw(chartView, () -> {
                 rangeSeekBar.setValues(chart.left, chart.right);
             });
+            titleView.setText(itemView.getContext().getString(R.string.chart_title, position + 1));
+
+            titleView.setVisibility(chartWithZoom.isZoomed() ? View.INVISIBLE : View.VISIBLE);
+            zoomOutView.setVisibility(chartWithZoom.isZoomed() ? View.VISIBLE : View.INVISIBLE);
+
+            if (chartWithZoom.isZoomed()) {
+                chartView.setAxisDateFormatter(new DateFormatter("HH:mm"));
+                chartView.setPopupDateFormatter(new DateFormatter("HH:mm"));
+                chartView.setOnPopupClickedListener(null);
+            } else {
+                chartView.setAxisDateFormatter(new DateFormatter("MMM dd"));
+                chartView.setPopupDateFormatter(new DateFormatter("E, dd MMM YYYY"));
+                chartView.setOnPopupClickedListener(this::zoomIn);
+            }
+            zoomOutView.setOnClickListener(v -> zoomOut());
+        }
+
+        private void zoomIn(long date) {
+            int chartIndex = getAdapterPosition() + 1;
+            String dateString = new SimpleDateFormat("yyyy-MM/dd", Locale.getDefault()).format(date);
+            String path = chartIndex + "/" + dateString + ".json";
+            GetDayChartTask task = new GetDayChartTask(itemView.getContext().getAssets(), path, new GetDayChartTask.Callback() {
+                @Override
+                public void onSuccess(Chart chart) {
+                    int position = getAdapterPosition();
+                    ChartWithZoom chartWithZoom = mChartData.getCharts().get(position);
+                    chartWithZoom.setZoomedChart(chart);
+                    chartWithZoom.setZoomed(true);
+
+                    List<Long> xValues = chart.getXValues();
+                    Calendar leftDate = midnight(date);
+                    int leftIndex = Collections.binarySearch(xValues, leftDate.getTimeInMillis()) + 1;
+                    Calendar rightDate = midnight(date);
+                    rightDate.add(Calendar.DAY_OF_YEAR, 1);
+                    int rightIndex = Collections.binarySearch(xValues, rightDate.getTimeInMillis());
+
+                    chart.left = Math.max(0, Math.min(100, 100 * leftIndex / (float) xValues.size()));
+                    chart.right = Math.max(0, Math.min(100, 100 * rightIndex / (float) xValues.size()));
+                    notifyItemChanged(position);
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    //Do nothing
+                }
+            });
+            task.execute();
+        }
+
+
+        private Calendar midnight(long date) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(date);
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            return calendar;
+        }
+
+        private void zoomOut() {
+            if (getAdapterPosition() == RecyclerView.NO_POSITION) return;
+            int position = getAdapterPosition();
+            ChartWithZoom chartWithZoom = mChartData.getCharts().get(position);
+            chartWithZoom.setZoomed(false);
+            notifyItemChanged(position);
         }
 
         @Override
         public void onRangeChanged(float leftValue, float rightValue, boolean fromUser) {
-            Chart chart = mChartData.getCharts().get(getAdapterPosition());
+            if (getAdapterPosition() == RecyclerView.NO_POSITION) return;
+            Chart chart = mChartData.getCharts().get(getAdapterPosition()).getCurrent();
             chart.left = leftValue;
             chart.right = rightValue;
             chartView.setChartLeftAndRight(chart.left / 100f, chart.right / 100f, fromUser);
             List<Long> xValues = chart.getXValues();
             String leftDate = mDateFormatter.format(xValues.get((int) ((xValues.size() - 1) * chart.left / 100f)));
             String rightDate = mDateFormatter.format(xValues.get((int) ((xValues.size() - 1) * chart.right / 100f)));
-            rangeView.setText(itemView.getContext().getString(R.string.range_format, leftDate, rightDate));
+
+            if (leftDate.equals(rightDate)) {
+                rangeView.setText(leftDate);
+            } else {
+                rangeView.setText(itemView.getContext().getString(R.string.range_format, leftDate, rightDate));
+            }
         }
 
         @Override
@@ -115,7 +199,8 @@ public class MainAdapter extends HolderAdapter<MainAdapter.ChartViewHolder> {
 
         @Override
         public void onLongClick(Graph graph) {
-            Chart chart = mChartData.getCharts().get(getAdapterPosition());
+            if (getAdapterPosition() == RecyclerView.NO_POSITION) return;
+            Chart chart = mChartData.getCharts().get(getAdapterPosition()).getCurrent();
             for (Graph g : chart.getGraphs()) {
                 g.setVisible(g == graph);
             }

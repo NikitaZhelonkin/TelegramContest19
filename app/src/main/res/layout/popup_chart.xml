@@ -3,7 +3,7 @@
 
     <TextView
         android:id="@+id/xValue"
-        android:layout_width="135dp"
+        android:layout_width="140dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="12dp"
         android:layout_marginRight="12dp"
@@ -14,7 +14,7 @@
 
     <ru.zhelonkin.tgcontest.widget.DynamicLinearLayout
         android:id="@+id/values_layout"
-        android:layout_width="135dp"
+        android:layout_width="140dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="12dp"
         android:layout_marginRight="12dp"

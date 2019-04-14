@@ -21,7 +21,7 @@
     <TextView
         android:layout_width="0dp"
         tools:text="Joined"
-        android:layout_weight="1"
+        android:layout_weight="0.55"
         android:id="@+id/line_name"
         android:textSize="12sp"
         android:textColor="?android:textColorPrimary"
@@ -29,7 +29,7 @@
 
     <TextView
         android:layout_width="0dp"
-        android:layout_weight="1"
+        android:layout_weight="0.45"
         tools:text="122"
         android:gravity="end"
         android:id="@+id/value"
