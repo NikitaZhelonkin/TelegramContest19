@@ -2,13 +2,13 @@ package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
+import android.support.annotation.Keep;
 
 import java.util.List;
 
-import android.support.annotation.Keep;
-import ru.zhelonkin.tgcontest.widget.FastOutSlowInInterpolator;
 import ru.zhelonkin.tgcontest.model.Chart;
 import ru.zhelonkin.tgcontest.model.Graph;
+import ru.zhelonkin.tgcontest.widget.FastOutSlowInInterpolator;
 import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 
 public class Viewport {
@@ -109,7 +109,7 @@ public class Viewport {
         float maxY = Float.MIN_VALUE;
         float[] sumArr = new float[mChart.getXValues().size()];
         for (Graph graph : mGraphs) {
-            if (!graph.isVisible()) continue;
+            if (!mChart.isYScaled() && !graph.isVisible()) continue;
             for (int i = startIndex; i < endIndex && i < mChart.getXValues().size(); i++) {
                 if (mChart.getY(graph, i) < minY) {
                     minY = mChart.getY(graph, i);
@@ -128,9 +128,9 @@ public class Viewport {
         }
         float[] result = new float[2];
 
-        if(Graph.TYPE_LINE.equals(mChart.getType())){
+        if (Graph.TYPE_LINE.equals(mChart.getType())) {
             result[0] = minY == Float.MAX_VALUE ? 0 : (minY - minY()) / rangeY();
-        }else {
+        } else {
             result[0] = 0;
         }
         result[1] = maxY == Float.MIN_VALUE ? 1 : (maxY - minY()) / rangeY();
@@ -140,6 +140,10 @@ public class Viewport {
 
     public long valueX(float pointX) {
         return (long) ((pointX + minX() * scaleX() - translationX() - mView.getPaddingLeft()) / scaleX());
+    }
+
+    public long valueY(float pointY) {
+        return (long) (-(pointY - mView.getHeight() + mView.getPaddingBottom() - translationY() - minY() * scaleY()) / scaleY());
     }
 
     public float pointX(long x) {

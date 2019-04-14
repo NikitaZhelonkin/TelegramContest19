@@ -152,7 +152,7 @@ public class ChartView extends FrameLayout {
             mChartRendererSecondary = null;
             mViewportSecondary = null;
         }
-        mAxisesRenderer = new AxisesRenderer(this, mViewport, mGridPaint, mTextPaint, mTextPadding);
+        mAxisesRenderer = new AxisesRenderer(this,mChart, mViewport, mViewportSecondary, mGridPaint, mTextPaint, mTextPadding);
         invalidate();
     }
 
