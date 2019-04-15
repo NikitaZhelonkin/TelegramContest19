@@ -74,8 +74,8 @@ public class ChartPopupView extends LinearLayout {
         setVisibility(View.VISIBLE);
         if (animate) {
             if (mIsShowing) return;
-            animate().cancel();
             animate().setListener(null);
+            animate().cancel();
             animate().alpha(1).setDuration(200).start();
         } else {
             setAlpha(1);
@@ -102,8 +102,8 @@ public class ChartPopupView extends LinearLayout {
         mIsShowing = false;
     }
 
-    public void animateOffset(int offset) {
-        ObjectAnimator animator = ObjectAnimator.ofFloat(this, "popupOffset", offset);
+    public void animateOffset(float lastOffset, float offset) {
+        ObjectAnimator animator = ObjectAnimator.ofFloat(this, "popupOffset",lastOffset, offset);
         animator.setAutoCancel(true);
         animator.setDuration(300);
         animator.setInterpolator(new FastOutSlowInInterpolator());

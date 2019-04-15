@@ -27,7 +27,7 @@ public abstract class BaseRenderer implements Renderer {
 
     private int mScaledTouchSlop;
 
-    private int mTargetPosition = ChartView.INVALID_TARGET;
+    private int mTarget = ChartView.INVALID_TARGET;
 
     private ChartPopupView mChartPopupView;
 
@@ -102,11 +102,11 @@ public abstract class BaseRenderer implements Renderer {
     }
 
     public int getTarget() {
-        return mTargetPosition;
+        return mTarget;
     }
 
     public void setTarget(int target) {
-        if (mTargetPosition != target) {
+        if (mTarget != target) {
             if (mChart.getVisibleGraphs().size() == 0) {
                 target = ChartView.INVALID_TARGET;
             }
@@ -117,7 +117,7 @@ public abstract class BaseRenderer implements Renderer {
             } else {
                 showPopup(target);
             }
-            mTargetPosition = target;
+            mTarget = target;
             mChartView.invalidate();
         }
     }
@@ -145,11 +145,18 @@ public abstract class BaseRenderer implements Renderer {
         int popupWidth = mChartPopupView.getMeasuredWidth();
         int gravity = x > width / 2f ? Gravity.START : Gravity.END;
         int lastGravity = mChartPopupView.getTranslationX() - mChartPopupView.getPopupOffset() > width / 2f ? Gravity.START : Gravity.END;
-        mChartPopupView.setTranslationX(x + mChartPopupView.getPopupOffset());
+        float lastTranslation = mChartPopupView.getTranslationX();
+        float lastOffset = mChartPopupView.getPopupOffset();
+        mChartPopupView.setTranslationX(x + lastOffset);
+
         if (justShown) {
             mChartPopupView.setPopupOffset(gravity == Gravity.START ? -popupWidth : 0);
+        } else if (!mIsDragging) {
+            float diff = lastTranslation - x;
+            mChartPopupView.animateOffset(diff, gravity == Gravity.START ? -popupWidth : 0);
         } else if (lastGravity != gravity) {
-            mChartPopupView.animateOffset(gravity == Gravity.START ? -popupWidth : 0);
+            float diff = lastTranslation - x;
+            mChartPopupView.animateOffset(diff, gravity == Gravity.START ? -popupWidth : 0);
         }
     }
 
