@@ -3,6 +3,7 @@ package ru.zhelonkin.tgcontest.main;
 import android.animation.ObjectAnimator;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -76,7 +77,7 @@ public class FiltersAdapter extends DynamicViewDelegate.Adapter<FiltersAdapter.V
                     new int[]{android.R.attr.state_checked},
                     new int[]{-android.R.attr.state_checked}
             }, new int[]{Color.WHITE, graph.getColor()});
-            mCheckBox.setBackgroundTintList(ColorStateList.valueOf(graph.getColor()));
+            mCheckBox.getBackground().setColorFilter(graph.getColor(), PorterDuff.Mode.SRC_IN);
             mCheckBox.setTextColor(colorStateList);
             mCheckBox.setOnCheckedChangeListener(null);
             mCheckBox.setChecked(graph.isVisible());

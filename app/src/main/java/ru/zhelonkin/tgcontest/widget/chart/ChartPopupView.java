@@ -39,7 +39,7 @@ public class ChartPopupView extends LinearLayout {
 
     private boolean mIsShowing;
 
-    private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("E, dd MMM YYYY"));
+    private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("E, dd MMM yyyy"));
 
     private float mPopupOffset;
 

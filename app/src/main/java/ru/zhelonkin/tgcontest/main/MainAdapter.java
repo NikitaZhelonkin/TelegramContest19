@@ -69,8 +69,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
     class ChartViewHolder extends RecyclerView.ViewHolder implements RangeSeekBar.OnRangeSeekBarChangeListener,
             FiltersAdapter.Callback {
 
-        private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("dd MMM YYYY"));
-        private Formatter mSingleDateFormatter = new CachingFormatter(new DateFormatter("EEE, dd MMM YYYY"));
+        private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("dd MMM yyyy"));
+        private Formatter mSingleDateFormatter = new CachingFormatter(new DateFormatter("EEE, dd MMM yyyy"));
 
         private TextView titleView;
         private TextView zoomOutView;
@@ -119,7 +119,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
                 chartView.setOnPopupClickedListener(null);
             } else {
                 chartView.setAxisDateFormatter(new DateFormatter("MMM dd"));
-                chartView.setPopupDateFormatter(new DateFormatter("E, dd MMM YYYY"));
+                chartView.setPopupDateFormatter(new DateFormatter("E, dd MMM yyyy"));
                 chartView.setOnPopupClickedListener(this::zoomIn);
             }
             zoomOutView.setOnClickListener(v -> zoomOut());
