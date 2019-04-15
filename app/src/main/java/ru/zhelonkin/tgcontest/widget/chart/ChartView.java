@@ -14,11 +14,8 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.view.GestureDetector;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.widget.FrameLayout;
 
 import java.util.Collections;
@@ -61,14 +58,6 @@ public class ChartView extends FrameLayout {
     private boolean mIsPreviewMode;
 
     private int mCornerRadius;
-
-    private int mTargetPosition = INVALID_TARGET;
-
-    private boolean mIsDragging;
-
-    private float mTouchDownX;
-
-    private int mScaledTouchSlop;
 
     private Viewport mViewport;
 
@@ -137,8 +126,6 @@ public class ChartView extends FrameLayout {
 
         setWillNotDraw(false);
 
-        mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-
         mChartPopupView = new ChartPopupView(context);
         mChartPopupView.hide(false);
         LayoutParams layoutParams = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -149,11 +136,16 @@ public class ChartView extends FrameLayout {
         setDrawAxis(true);
     }
 
+    public ChartPopupView getChartPopupView() {
+        return mChartPopupView;
+    }
+
     private OnClickListener mOnPopupClickListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (mOnPopupClickedListener != null && mTargetPosition != INVALID_TARGET) {
-                mOnPopupClickedListener.onPopupClicked(mChart.getXValues().get(mTargetPosition));
+            int target = mChartRenderer.getTarget();
+            if (mOnPopupClickedListener != null && target != INVALID_TARGET) {
+                mOnPopupClickedListener.onPopupClicked(mChart.getXValues().get(target));
             }
         }
     };
@@ -185,7 +177,7 @@ public class ChartView extends FrameLayout {
             mViewportSecondary = null;
         }
         mAxisesRenderer = new AxisesRenderer(this, mChart, mViewport, mViewportSecondary, mGridPaint, mTextPaint, mTextPadding);
-        setTarget(INVALID_TARGET);
+        mChartRenderer.setTarget(INVALID_TARGET);
         invalidate();
     }
 
@@ -201,7 +193,7 @@ public class ChartView extends FrameLayout {
     }
 
     public void onFiltersChanged() {
-        updatePopup(mTargetPosition);
+        mChartRenderer.setTarget(INVALID_TARGET);
         mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true);
         if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(mViewportSecondary.getChartLeft(), mViewportSecondary.getChartRight(), true);
@@ -212,7 +204,7 @@ public class ChartView extends FrameLayout {
 
     public void setChartLeftAndRight(float left, float right, boolean animate) {
         if (mChart == null) return;
-        setTarget(INVALID_TARGET);
+        mChartRenderer.setTarget(INVALID_TARGET);
         mViewport.setChartLeftAndRight(left, right, animate);
         if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(left, right, animate);
@@ -233,13 +225,13 @@ public class ChartView extends FrameLayout {
 
         mChart.updateSums();//<<--костыль?
 
-        mChartRenderer.render(canvas, mTargetPosition);
+        mChartRenderer.render(canvas);
 
         if (mChartRendererSecondary != null) {
-            mChartRendererSecondary.render(canvas, mTargetPosition);
+            mChartRendererSecondary.render(canvas);
         }
 
-        if (!mIsPreviewMode && mDrawAxis) mAxisesRenderer.render(canvas, mTargetPosition);
+        if (!mIsPreviewMode && mDrawAxis) mAxisesRenderer.render(canvas);
         canvas.restoreToCount(saveCount);
     }
 
@@ -253,11 +245,6 @@ public class ChartView extends FrameLayout {
         }
     }
 
-    final GestureDetector gestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
-        public void onLongPress(MotionEvent e) {
-            setTarget(e);
-        }
-    });
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -265,107 +252,9 @@ public class ChartView extends FrameLayout {
         if (!isEnabled() || mIsPreviewMode || mChart == null)
             return false;
 
-        if (mChartRenderer.onTouchEvent(event)) {
-            return true;
-        }
-
-        gestureDetector.onTouchEvent(event);
-
-        final int action = event.getAction();
-        removeCallbacks(mDismissPopupRunnable);
-
-        switch (action & MotionEvent.ACTION_MASK) {
-            case MotionEvent.ACTION_DOWN:
-                mTouchDownX = event.getX();
-            case MotionEvent.ACTION_MOVE:
-                final float x = event.getX();
-                if (!mIsDragging) {
-                    if (Math.abs(x - mTouchDownX) > mScaledTouchSlop) {
-                        mIsDragging = true;
-                        attemptClaimDrag();
-                    }
-                }
-                if (mIsDragging || mTargetPosition != INVALID_TARGET) {
-                    setTarget(event);
-                }
-                break;
-            case MotionEvent.ACTION_UP:
-                setTarget(event);
-            case MotionEvent.ACTION_CANCEL:
-                mIsDragging = false;
-                postDelayed(mDismissPopupRunnable, 2000);
-                break;
-        }
-
-        return true;
+        return mChartRenderer.onTouchEvent(event);
     }
 
-    private Runnable mDismissPopupRunnable = () -> setTarget(INVALID_TARGET);
-
-    private void attemptClaimDrag() {
-        if (getParent() != null) {
-            getParent().requestDisallowInterceptTouchEvent(true);
-        }
-    }
-
-    private void setTarget(MotionEvent event){
-        setTarget(mChart.findTargetPosition(mViewport.valueX(event.getX())));
-    }
-
-    private void setTarget(int target) {
-        if (mTargetPosition != target) {
-            if (mChart.getVisibleGraphs().size() == 0) {
-                target = INVALID_TARGET;
-            }
-            if (target == INVALID_TARGET) {
-                hidePopup();
-            } else if (mChartPopupView.isShowing()) {
-                updatePopup(target);
-            } else {
-                showPopup(target);
-            }
-            mTargetPosition = target;
-            invalidate();
-        }
-    }
-
-    private void showPopup(int targetPosition) {
-        if (!mChartPopupView.isShowing()) {
-            mChartPopupView.show(true);
-            mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition, false);
-        }
-    }
-
-    private void updatePopup(int targetPosition) {
-        if (mChartPopupView.isShowing()) {
-            mChartPopupView.bindData(mChart, targetPosition);
-            updatePopupPosition(targetPosition, true);
-        }
-    }
-
-    private void updatePopupPosition(int targetPosition, boolean animate) {
-        float x = mViewport.pointX(mChart.getXValues().get(targetPosition)) - getPaddingLeft();
-        int width = getWidth() - getPaddingLeft() - getPaddingRight();
-        mChartPopupView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST),
-                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
-        int popupWidth = mChartPopupView.getMeasuredWidth();
-        int gravity = x > width / 2f ? Gravity.START : Gravity.END;
-        int lastGravity = mChartPopupView.getTranslationX() - mChartPopupView.getPopupOffset() > width / 2f ? Gravity.START : Gravity.END;
-        mChartPopupView.setTranslationX(x + mChartPopupView.getPopupOffset());
-        if (!animate) {
-            mChartPopupView.setPopupOffset(gravity == Gravity.START ? -popupWidth : 0);
-        } else if (lastGravity != gravity) {
-            mChartPopupView.animateOffset(gravity == Gravity.START ? -popupWidth : 0);
-        }
-    }
-
-
-    private void hidePopup() {
-        if (mChartPopupView.isShowing()) {
-            mChartPopupView.hide(true);
-        }
-    }
 
     private Renderer createRendererForChart(Chart chart, List<Graph> graphList, Viewport viewport) {
         if(chart.isPieChart()){

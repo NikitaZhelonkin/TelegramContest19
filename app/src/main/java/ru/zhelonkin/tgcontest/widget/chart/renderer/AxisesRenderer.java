@@ -52,7 +52,7 @@ public class AxisesRenderer extends BaseRenderer {
                           Paint gridPaint,
                           TextPaint textPaint,
                           int textPadding) {
-        super(viewport);
+        super(view, chart, viewport);
         mView = view;
         mChart = chart;
         mViewportSecondary = viewportSecondary;
@@ -67,7 +67,7 @@ public class AxisesRenderer extends BaseRenderer {
     }
 
     @Override
-    public void render(Canvas canvas, int targetPosition) {
+    public void render(Canvas canvas) {
         drawXAxis(canvas);
         drawYAxis(canvas);
     }

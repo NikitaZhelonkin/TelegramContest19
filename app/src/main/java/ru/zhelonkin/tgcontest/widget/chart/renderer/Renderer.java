@@ -5,7 +5,11 @@ import android.view.MotionEvent;
 
 public interface Renderer {
 
-    void render(Canvas canvas, int targetPosition);
+    void render(Canvas canvas);
 
     boolean onTouchEvent(MotionEvent event);
+
+    int getTarget();
+
+    void setTarget(int target);
 }

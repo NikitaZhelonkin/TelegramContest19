@@ -8,7 +8,6 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v7.util.DiffUtil;
 import android.support.v7.util.ListUpdateCallback;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -130,10 +129,16 @@ public class ChartPopupView extends LinearLayout {
         mDateFormatter = new CachingFormatter(dateFormatter);
     }
 
-    void bindData(Chart chart, int position) {
+    public void bindData(Chart chart, int position) {
+        mXValueView.setVisibility(View.VISIBLE);
         mXValueView.setText(mDateFormatter.format(chart.getXValues().get(position)));
         mXValueView.setCompoundDrawablesWithIntrinsicBounds(null, null, isClickable() ? mArrowDrawable : null, null);
         mAdapter.setData(chart, position);
+    }
+
+    public void bindData(List<Item> items){
+        mXValueView.setVisibility(View.GONE);
+        mAdapter.setData(items);
     }
 
     void clearData() {
@@ -150,18 +155,21 @@ public class ChartPopupView extends LinearLayout {
 
         private int mDefaultColor;
 
+        private int mMargin;
+
         private Adapter(Context context) {
+            mMargin = context.getResources().getDimensionPixelSize(R.dimen.popup_item_margin);
             mDefaultColor = ThemeUtils.getColor(context, android.R.attr.textColorPrimary, 0);
         }
 
         void setData(Chart chart, int position) {
-            List<Item> mItems = new ArrayList<>();
+            List<Item> items = new ArrayList<>();
             mPercentage = chart.isPercentage();
             boolean showAll = chart.isStacked() && !chart.isPercentage();
             mSumm = 0;
             for (Graph graph : chart.getVisibleGraphs()) {
                 long value = graph.getPoints().get(position).y;
-                mItems.add(new Item(
+                items.add(new Item(
                         value,
                         graph.getName(),
                         graph.getColor()));
@@ -169,9 +177,14 @@ public class ChartPopupView extends LinearLayout {
 
             }
             if (showAll) {
-                mItems.add(new Item(mSumm, "All", mDefaultColor));
+                items.add(new Item(mSumm, "All", mDefaultColor));
             }
-            this.mItems = mItems;
+            mItems = items;
+            notifyDataChanged();
+        }
+
+        void setData(List<Item> items){
+            mItems = items;
             notifyDataChanged();
         }
 
@@ -188,6 +201,7 @@ public class ChartPopupView extends LinearLayout {
 
         @Override
         protected void onBindViewHolder(ChartPopupView.Adapter.ViewHolder viewHolder, int position, Object payload) {
+            ((MarginLayoutParams) viewHolder.itemView.getLayoutParams()).topMargin = position == 0 ? 0 : mMargin;
             Context context = viewHolder.itemView.getContext();
             Item item = mItems.get(position);
             viewHolder.lineNameView.setText(item.title);
@@ -210,49 +224,17 @@ public class ChartPopupView extends LinearLayout {
                 percentView = itemView.findViewById(R.id.percent);
             }
         }
+    }
 
-        private class Item {
-            long value;
-            String title;
-            int color;
+    public static class Item {
+        long value;
+        String title;
+        int color;
 
-            Item(long value, String title, int color) {
-                this.value = value;
-                this.title = title;
-                this.color = color;
-            }
-        }
-
-        private class DiffUtilCallback extends DiffUtil.Callback {
-
-
-            private List<Item> oldValue;
-            private List<Item> newValue;
-
-            DiffUtilCallback(List<Item> oldValue, List<Item> newValue) {
-                this.oldValue = oldValue;
-                this.newValue = newValue;
-            }
-
-            @Override
-            public int getOldListSize() {
-                return oldValue == null ? 0 : oldValue.size();
-            }
-
-            @Override
-            public int getNewListSize() {
-                return newValue == null ? 0 : newValue.size();
-            }
-
-            @Override
-            public boolean areItemsTheSame(int i, int i1) {
-                return oldValue.get(i).color == newValue.get(i1).color;
-            }
-
-            @Override
-            public boolean areContentsTheSame(int i, int i1) {
-                return false;
-            }
+        public Item(long value, String title, int color) {
+            this.value = value;
+            this.title = title;
+            this.color = color;
         }
     }
 }

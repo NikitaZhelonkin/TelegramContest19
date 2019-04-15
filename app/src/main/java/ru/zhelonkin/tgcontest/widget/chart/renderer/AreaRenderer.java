@@ -22,7 +22,7 @@ public class AreaRenderer extends BaseRenderer {
     private Paint mXPaint;
 
     public AreaRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport, Paint gridPaint) {
-        super(viewport);
+        super(view, chart, viewport);
         mView = view;
         mChart = chart;
         mGraphs = graphs;
@@ -31,7 +31,7 @@ public class AreaRenderer extends BaseRenderer {
     }
 
     @Override
-    public void render(Canvas canvas, int targetPosition) {
+    public void render(Canvas canvas) {
         for (int i = 0; i < mStackBuffer.length; i++) {
             mStackBuffer[i] = 0;
         }
@@ -49,8 +49,8 @@ public class AreaRenderer extends BaseRenderer {
         }
         canvas.restoreToCount(saveCount);
 
-        if (targetPosition != ChartView.INVALID_TARGET)
-            drawX(canvas, pointX(mChart.getXValues().get(targetPosition)));
+        if (getTarget() != ChartView.INVALID_TARGET)
+            drawX(canvas, pointX(mChart.getXValues().get(getTarget())));
     }
 
     private void drawAreaGraph(Canvas canvas, Graph graph) {

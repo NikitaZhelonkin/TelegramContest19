@@ -21,7 +21,7 @@ public class BarRenderer extends BaseRenderer {
     private Paint mBarPaint = new Paint();
 
     public BarRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport) {
-        super(viewport);
+        super(view, chart, viewport);
         mView = view;
         mChart = chart;
         mGraphs = graphs;
@@ -29,12 +29,12 @@ public class BarRenderer extends BaseRenderer {
     }
 
     @Override
-    public void render(Canvas canvas, int targetPosition) {
+    public void render(Canvas canvas) {
         for (int i = 0; i < mStackBuffer.length; i++) {
             mStackBuffer[i] = 0;
         }
         for (Graph graph : mGraphs) {
-            drawBarGraph(canvas, graph, targetPosition);
+            drawBarGraph(canvas, graph, getTarget());
         }
     }
 

@@ -26,7 +26,7 @@ public class LineRenderer extends BaseRenderer {
     public LineRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport, Paint gridPaint,
                         int lineWidth,
                         int surfaceColor) {
-        super(viewport);
+        super(view, chart, viewport);
         mView = view;
         mChart = chart;
         mGraphs = graphs;
@@ -39,7 +39,8 @@ public class LineRenderer extends BaseRenderer {
     }
 
     @Override
-    public void render(Canvas canvas, int targetPosition) {
+    public void render(Canvas canvas) {
+        int targetPosition = getTarget();
         if (targetPosition != ChartView.INVALID_TARGET)
             drawX(canvas, pointX(mChart.getXValues().get(targetPosition)));
 
