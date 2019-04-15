@@ -40,7 +40,6 @@ public class MainActivity extends Activity implements
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
         recyclerView.setAdapter(mMainAdapter);
 
-
         ChartData chartData = (ChartData) getLastNonConfigurationInstance();
         if (chartData != null) {
             onSuccess(chartData);

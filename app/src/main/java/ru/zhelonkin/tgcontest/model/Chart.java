@@ -15,6 +15,7 @@ public class Chart {
     private boolean mYScaled;
     private boolean mStacked;
     private boolean mPercentage;
+    private boolean mPieChart;
 
     public float left = 70f;
     public float right = 100f;
@@ -31,6 +32,23 @@ public class Chart {
 
     public String getType(){
        return mGraphs.get(0).getType();
+    }
+
+    public boolean isPieChart() {
+        return mPieChart;
+    }
+
+    public void setPieChart(boolean pieChart) {
+        mPieChart = pieChart;
+    }
+
+    public Chart subChart(int leftIndex, int rightIndex){
+        List<Graph> graphs = new ArrayList<>();
+        for(Graph g:getGraphs()){
+            graphs.add(g.subGraph(leftIndex, rightIndex));
+        }
+        List<Long> xValues = getXValues().subList(leftIndex, rightIndex);
+        return new Chart(graphs, xValues, isYScaled(), isStacked(), isPercentage());
     }
 
     @NonNull
@@ -94,6 +112,10 @@ public class Chart {
             }
         }
         return sums;
+    }
+
+    public float[] getSums() {
+        return mSums;
     }
 
     public void updateSums() {

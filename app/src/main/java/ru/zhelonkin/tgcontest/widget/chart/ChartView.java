@@ -30,8 +30,8 @@ import ru.zhelonkin.tgcontest.model.Graph;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.AreaRenderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.AxisesRenderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.BarRenderer;
-import ru.zhelonkin.tgcontest.widget.chart.renderer.BaseRenderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.LineRenderer;
+import ru.zhelonkin.tgcontest.widget.chart.renderer.PieChartRenderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.Renderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.Viewport;
 
@@ -84,6 +84,8 @@ public class ChartView extends FrameLayout {
     private Path mCornerPath = new Path();
 
     private OnPopupClickedListener mOnPopupClickedListener;
+
+    private boolean mDrawAxis;
 
     public ChartView(Context context) {
         super(context);
@@ -142,6 +144,8 @@ public class ChartView extends FrameLayout {
         layoutParams.setMargins(0, 0, 0, 0);
         addView(mChartPopupView, layoutParams);
         mGraphAnimator = new GraphAnimator(this);
+
+        setDrawAxis(true);
     }
 
     private OnClickListener mOnPopupClickListener = new OnClickListener() {
@@ -155,7 +159,13 @@ public class ChartView extends FrameLayout {
 
     public void setOnPopupClickedListener(OnPopupClickedListener onPopupClickedListener) {
         mOnPopupClickedListener = onPopupClickedListener;
-        mChartPopupView.setOnClickListener(onPopupClickedListener != null ? mOnPopupClickListener : null);
+        mChartPopupView.setOnClickListener(mOnPopupClickListener);
+        mChartPopupView.setClickable(onPopupClickedListener!=null);
+    }
+
+    public void setDrawAxis(boolean drawAxis) {
+        mDrawAxis = drawAxis;
+        invalidate();
     }
 
     public void setChart(@NonNull Chart chart) {
@@ -201,7 +211,7 @@ public class ChartView extends FrameLayout {
 
     public void setChartLeftAndRight(float left, float right, boolean animate) {
         if (mChart == null) return;
-        hidePopup();
+        setTarget(INVALID_TARGET);
         mViewport.setChartLeftAndRight(left, right, animate);
         if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(left, right, animate);
@@ -228,7 +238,7 @@ public class ChartView extends FrameLayout {
             mChartRendererSecondary.render(canvas, mTargetPosition);
         }
 
-        if (!mIsPreviewMode) mAxisesRenderer.render(canvas, mTargetPosition);
+        if (!mIsPreviewMode && mDrawAxis) mAxisesRenderer.render(canvas, mTargetPosition);
         canvas.restoreToCount(saveCount);
     }
 
@@ -247,6 +257,10 @@ public class ChartView extends FrameLayout {
     public boolean onTouchEvent(MotionEvent event) {
         if (!isEnabled() || mIsPreviewMode || mChart == null)
             return false;
+
+        if (mChartRenderer.onTouchEvent(event)) {
+            return true;
+        }
 
         final int action = event.getAction();
         removeCallbacks(mDismissPopupRunnable);
@@ -272,7 +286,6 @@ public class ChartView extends FrameLayout {
         }
 
         return true;
-
     }
 
     private Runnable mDismissPopupRunnable = () -> setTarget(INVALID_TARGET);
@@ -338,7 +351,14 @@ public class ChartView extends FrameLayout {
         }
     }
 
-    private BaseRenderer createRendererForChart(Chart chart, List<Graph> graphList, Viewport viewport) {
+    private Renderer createRendererForChart(Chart chart, List<Graph> graphList, Viewport viewport) {
+        if(chart.isPieChart()){
+            if(mIsPreviewMode){
+                return new BarRenderer(this, chart, graphList, viewport);
+            }else {
+                return new PieChartRenderer(this, chart, viewport);
+            }
+        }
         String type = chart.getType();
         if (Graph.TYPE_BAR.equals(type)) {
             return new BarRenderer(this, chart, graphList, viewport);

@@ -2,12 +2,10 @@ package ru.zhelonkin.tgcontest.model;
 
 public class ChartWithZoom {
 
-    Chart mChart;
-    Chart mZoomedChart;
+    private Chart mChart;
+    private Chart mZoomedChart;
 
-    boolean mIsZoomed;
-
-    public ChartWithZoom(Chart chart) {
+    ChartWithZoom(Chart chart) {
         mChart = chart;
     }
 
@@ -15,19 +13,11 @@ public class ChartWithZoom {
         mZoomedChart = zoomedChart;
     }
 
-    public void setZoomed(boolean zoomed) {
-        mIsZoomed = zoomed;
-    }
-
     public boolean isZoomed() {
-        return mIsZoomed;
+        return mZoomedChart!=null;
     }
 
     public Chart getCurrent() {
-        return mIsZoomed ? mZoomedChart : mChart;
-    }
-
-    public boolean getZoomedChart() {
-        return mIsZoomed;
+        return mZoomedChart!=null ? mZoomedChart : mChart;
     }
 }

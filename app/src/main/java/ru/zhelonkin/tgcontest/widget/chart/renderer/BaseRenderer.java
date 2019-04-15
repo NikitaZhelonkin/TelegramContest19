@@ -1,6 +1,7 @@
 package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 
+import android.view.MotionEvent;
 
 public abstract class BaseRenderer implements Renderer {
 
@@ -18,9 +19,12 @@ public abstract class BaseRenderer implements Renderer {
         return mViewport.pointX(x);
     }
 
-
     float pointY(float y) {
         return mViewport.pointY(y);
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return false;
+    }
 }

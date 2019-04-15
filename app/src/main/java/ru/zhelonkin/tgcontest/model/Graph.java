@@ -29,6 +29,11 @@ public class Graph {
         mAlpha = 1f;
     }
 
+    public Graph subGraph(int startIndex, int endIndex){
+        List<Point> points = getPoints().subList(startIndex, endIndex);
+        return new Graph(points.toArray(new Point[0]), getType(), getName(), getColor());
+    }
+
     public String getType() {
         return mType;
     }

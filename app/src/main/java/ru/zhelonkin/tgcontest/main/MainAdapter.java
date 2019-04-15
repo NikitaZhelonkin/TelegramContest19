@@ -110,6 +110,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             titleView.setVisibility(chartWithZoom.isZoomed() ? View.INVISIBLE : View.VISIBLE);
             zoomOutView.setVisibility(chartWithZoom.isZoomed() ? View.VISIBLE : View.INVISIBLE);
 
+            chartView.setDrawAxis(!(chartWithZoom.isZoomed() && chart.isPercentage()));
+
             if (chartWithZoom.isZoomed()) {
                 chartView.setAxisDateFormatter(new DateFormatter("HH:mm"));
                 chartView.setPopupDateFormatter(new DateFormatter("HH:mm"));
@@ -123,26 +125,37 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
         }
 
         private void zoomIn(long date) {
-            int chartIndex = getAdapterPosition() + 1;
+            if (getAdapterPosition() == RecyclerView.NO_POSITION) return;
+            int position = getAdapterPosition();
+            ChartWithZoom chartWithZoom = mChartData.getCharts().get(position);
+            Chart chart = chartWithZoom.getCurrent();
+            if (chart.isPercentage()) {
+                int size = chart.getXValues().size();
+                int index = Collections.binarySearch(chart.getXValues(), date);
+                int leftIndex = Math.max(0, Math.min(size - 1, index - 3));
+                int rightIndex = Math.max(0, Math.min(size - 1, index + 4));
+
+                Chart chartZoomed = chart.subChart(leftIndex, rightIndex);
+                chartZoomed.setPieChart(true);
+                int range = 100 / chartZoomed.getXValues().size();
+                chartZoomed.left = (100 - range) / 2f;
+                chartZoomed.right = chartZoomed.left + range;
+
+                chartWithZoom.setZoomedChart(chartZoomed);
+                notifyItemChanged(position);
+                return;
+            }
             String dateString = new SimpleDateFormat("yyyy-MM/dd", Locale.getDefault()).format(date);
-            String path = chartIndex + "/" + dateString + ".json";
+            String path = (position + 1) + "/" + dateString + ".json";
             GetDayChartTask task = new GetDayChartTask(itemView.getContext().getAssets(), path, new GetDayChartTask.Callback() {
                 @Override
                 public void onSuccess(Chart chart) {
+                    if (getAdapterPosition() == RecyclerView.NO_POSITION) return;
                     int position = getAdapterPosition();
                     ChartWithZoom chartWithZoom = mChartData.getCharts().get(position);
                     chartWithZoom.setZoomedChart(chart);
-                    chartWithZoom.setZoomed(true);
 
-                    List<Long> xValues = chart.getXValues();
-                    Calendar leftDate = midnight(date);
-                    int leftIndex = Collections.binarySearch(xValues, leftDate.getTimeInMillis()) + 1;
-                    Calendar rightDate = midnight(date);
-                    rightDate.add(Calendar.DAY_OF_YEAR, 1);
-                    int rightIndex = Collections.binarySearch(xValues, rightDate.getTimeInMillis());
-
-                    chart.left = Math.max(0, Math.min(100, 100 * leftIndex / (float) xValues.size()));
-                    chart.right = Math.max(0, Math.min(100, 100 * rightIndex / (float) xValues.size()));
+                    setLeftAndRightForDate(chart, date);
                     notifyItemChanged(position);
                 }
 
@@ -152,6 +165,18 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
                 }
             });
             task.execute();
+        }
+
+        private void setLeftAndRightForDate(Chart chart, long date){
+            List<Long> xValues = chart.getXValues();
+            Calendar leftDate = midnight(date);
+            int leftIndex = Collections.binarySearch(xValues, leftDate.getTimeInMillis());
+            Calendar rightDate = midnight(date);
+            rightDate.add(Calendar.DAY_OF_YEAR, 1);
+            int rightIndex = Collections.binarySearch(xValues, rightDate.getTimeInMillis())-1;
+
+            chart.left = Math.max(0, Math.min(100, 100 * leftIndex / (float)(xValues.size())));
+            chart.right = Math.max(0, Math.min(100, 100 * rightIndex / (float) (xValues.size())));
         }
 
 
@@ -168,7 +193,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             if (getAdapterPosition() == RecyclerView.NO_POSITION) return;
             int position = getAdapterPosition();
             ChartWithZoom chartWithZoom = mChartData.getCharts().get(position);
-            chartWithZoom.setZoomed(false);
+            chartWithZoom.setZoomedChart(null);
             notifyItemChanged(position);
         }
 
@@ -180,8 +205,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             chart.right = rightValue;
             chartView.setChartLeftAndRight(chart.left / 100f, chart.right / 100f, fromUser);
             List<Long> xValues = chart.getXValues();
-            String leftDate = mDateFormatter.format(xValues.get((int) ((xValues.size() - 1) * chart.left / 100f)));
-            String rightDate = mDateFormatter.format(xValues.get((int) ((xValues.size() - 1) * chart.right / 100f)));
+
+            int leftIndex =(int) ((xValues.size()) * chart.left / 100f) ;
+            int rightIndex = Math.min(xValues.size()-1, (int) ((xValues.size()) * chart.right / 100f));
+            String leftDate = mDateFormatter.format(xValues.get(leftIndex));
+            String rightDate = mDateFormatter.format(xValues.get(rightIndex));
 
             if (leftDate.equals(rightDate)) {
                 rangeView.setText(leftDate);

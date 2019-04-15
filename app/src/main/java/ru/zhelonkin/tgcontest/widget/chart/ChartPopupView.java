@@ -2,7 +2,6 @@ package ru.zhelonkin.tgcontest.widget.chart;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.LayoutTransition;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -157,29 +156,23 @@ public class ChartPopupView extends LinearLayout {
 
         void setData(Chart chart, int position) {
             List<Item> mItems = new ArrayList<>();
-            if (chart != null) {
-                mPercentage = chart.isPercentage();
-                boolean showAll = chart.isStacked() && !chart.isPercentage();
-                mSumm = 0;
-                for (Graph graph : chart.getVisibleGraphs()) {
-                    long value = graph.getPoints().get(position).y;
-                    mItems.add(new Item(
-                            value,
-                            graph.getName(),
-                            graph.getColor()));
-                    mSumm += value;
+            mPercentage = chart.isPercentage();
+            boolean showAll = chart.isStacked() && !chart.isPercentage();
+            mSumm = 0;
+            for (Graph graph : chart.getVisibleGraphs()) {
+                long value = graph.getPoints().get(position).y;
+                mItems.add(new Item(
+                        value,
+                        graph.getName(),
+                        graph.getColor()));
+                mSumm += value;
 
-                }
-                if (showAll) {
-                    mItems.add(new Item(mSumm, "All", mDefaultColor));
-                }
-                DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtilCallback(this.mItems, mItems), true);
-                this.mItems = mItems;
-                result.dispatchUpdatesTo(this);
-            }else {
-                this.mItems = mItems;
-                notifyDataChanged();
             }
+            if (showAll) {
+                mItems.add(new Item(mSumm, "All", mDefaultColor));
+            }
+            this.mItems = mItems;
+            notifyDataChanged();
         }
 
         @Override
