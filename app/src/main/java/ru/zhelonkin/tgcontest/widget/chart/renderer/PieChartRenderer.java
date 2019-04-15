@@ -1,10 +1,13 @@
 package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.support.annotation.Keep;
 import android.text.TextPaint;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
@@ -21,6 +24,7 @@ public class PieChartRenderer implements Renderer {
 
     private static final int MIN_TEXT_SIZE = 10;
     private static final int MAX_TEXT_SIZE = 24;
+    private static final int CURRENT_OFFSET = 8;
 
     private ChartView mView;
     private Chart mChart;
@@ -33,10 +37,12 @@ public class PieChartRenderer implements Renderer {
     private RectF mRectF = new RectF();
     private RectF mRectCurrent = new RectF();
 
-    private int mCurrentItem = -1;
-
     private final float mMinTextSize;
     private final float mMaxTextSize;
+
+    private final float mCurrentOffset;
+
+    private final AnimatedFloat[] mOffsets;
 
 
     public PieChartRenderer(ChartView view, Chart chart, Viewport viewport) {
@@ -45,7 +51,6 @@ public class PieChartRenderer implements Renderer {
         mViewport = viewport;
 
         mTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        mTextPaint.setTextSize(12 * 3);
         mTextPaint.setColor(Color.WHITE);
         mTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
@@ -55,25 +60,35 @@ public class PieChartRenderer implements Renderer {
         DisplayMetrics dm = view.getContext().getResources().getDisplayMetrics();
         mMinTextSize = dm.density * MIN_TEXT_SIZE;
         mMaxTextSize = dm.density * MAX_TEXT_SIZE;
+
+        mCurrentOffset = dm.density * CURRENT_OFFSET;
+
+        mOffsets = new AnimatedFloat[chart.getGraphs().size()];
+        for (int i = 0; i < mOffsets.length; i++) {
+            mOffsets[i] = new AnimatedFloat(0f);
+        }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_UP:
-                mCurrentItem = hitItem(event.getX(), event.getY());
-                mView.invalidate();
+                setCurrentItem(hitItem(event.getX(), event.getY()));
                 break;
         }
         return true;
+    }
+
+    private void setCurrentItem(int currentItem) {
+        for (int i = 0; i < mOffsets.length; i++) {
+            mOffsets[i].animate(currentItem == i ? mCurrentOffset : 0);
+        }
     }
 
     @Override
     public void render(Canvas canvas, int targetPosition) {
         float lastAngle = 0;
         float startAngle = 0;
-
-        float curOffset = 24;
 
         invalidateBounds();
 
@@ -92,14 +107,10 @@ public class PieChartRenderer implements Renderer {
             float bisectorAngle = startAngle + lastAngle + sweepAngle / 2;
 
             mRectCurrent.set(mRectF);
-            if (i == mCurrentItem) {
-                float offsetX = (float) (curOffset * Math.cos(Math.toRadians(bisectorAngle)));
-                float offsetY = (float) (curOffset * Math.sin(Math.toRadians(bisectorAngle)));
-                mRectCurrent.offset(offsetX, offsetY);
-                canvas.drawArc(mRectCurrent, startAngle + lastAngle, sweepAngle, true, mPaint);
-            } else {
-                canvas.drawArc(mRectCurrent, startAngle + lastAngle, sweepAngle, true, mPaint);
-            }
+            float offsetX = (float) (mOffsets[i].getValue() * Math.cos(Math.toRadians(bisectorAngle)));
+            float offsetY = (float) (mOffsets[i].getValue() * Math.sin(Math.toRadians(bisectorAngle)));
+            mRectCurrent.offset(offsetX, offsetY);
+            canvas.drawArc(mRectCurrent, startAngle + lastAngle, sweepAngle, true, mPaint);
             float textX = (float) (mRectCurrent.centerX() + mRectCurrent.width() / 3 * Math.cos(Math.toRadians(bisectorAngle)));
             float textY = (float) (mRectCurrent.centerY() + mRectCurrent.height() / 3 * Math.sin(Math.toRadians(bisectorAngle)));
             mPaint.setColor(Color.BLACK);
@@ -173,5 +184,32 @@ public class PieChartRenderer implements Renderer {
             sum += points.get(i).y;
         }
         return sum;
+    }
+
+    private class AnimatedFloat {
+
+        private float mValue;
+
+        public AnimatedFloat(float value) {
+            mValue = value;
+        }
+
+        @Keep
+        public void setValue(float value) {
+            mValue = value;
+        }
+
+        @Keep
+        public float getValue() {
+            return mValue;
+        }
+
+        public void animate(float value) {
+            ObjectAnimator animator = ObjectAnimator.ofFloat(this, "value", value);
+            animator.setDuration(200);
+            animator.setAutoCancel(true);
+            animator.addUpdateListener(animation -> mView.invalidate());
+            animator.start();
+        }
     }
 }

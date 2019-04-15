@@ -70,6 +70,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             FiltersAdapter.Callback {
 
         private Formatter mDateFormatter = new CachingFormatter(new DateFormatter("dd MMM YYYY"));
+        private Formatter mSingleDateFormatter = new CachingFormatter(new DateFormatter("EEE, dd MMM YYYY"));
 
         private TextView titleView;
         private TextView zoomOutView;
@@ -204,15 +205,19 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             chart.left = leftValue;
             chart.right = rightValue;
             chartView.setChartLeftAndRight(chart.left / 100f, chart.right / 100f, fromUser);
-            List<Long> xValues = chart.getXValues();
 
+            updateDateView(chart);
+
+        }
+        private void updateDateView(Chart chart){
+            List<Long> xValues = chart.getXValues();
             int leftIndex =(int) ((xValues.size()) * chart.left / 100f) ;
             int rightIndex = Math.min(xValues.size()-1, (int) ((xValues.size()) * chart.right / 100f));
             String leftDate = mDateFormatter.format(xValues.get(leftIndex));
             String rightDate = mDateFormatter.format(xValues.get(rightIndex));
 
             if (leftDate.equals(rightDate)) {
-                rangeView.setText(leftDate);
+                rangeView.setText(mSingleDateFormatter.format(xValues.get(leftIndex)));
             } else {
                 rangeView.setText(itemView.getContext().getString(R.string.range_format, leftDate, rightDate));
             }
