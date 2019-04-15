@@ -14,6 +14,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -252,6 +253,12 @@ public class ChartView extends FrameLayout {
         }
     }
 
+    final GestureDetector gestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+        public void onLongPress(MotionEvent e) {
+            setTarget(e);
+        }
+    });
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -261,6 +268,8 @@ public class ChartView extends FrameLayout {
         if (mChartRenderer.onTouchEvent(event)) {
             return true;
         }
+
+        gestureDetector.onTouchEvent(event);
 
         final int action = event.getAction();
         removeCallbacks(mDismissPopupRunnable);
@@ -276,9 +285,12 @@ public class ChartView extends FrameLayout {
                         attemptClaimDrag();
                     }
                 }
-                setTarget(mChart.findTargetPosition(mViewport.valueX(x)));
+                if (mIsDragging || mTargetPosition != INVALID_TARGET) {
+                    setTarget(event);
+                }
                 break;
             case MotionEvent.ACTION_UP:
+                setTarget(event);
             case MotionEvent.ACTION_CANCEL:
                 mIsDragging = false;
                 postDelayed(mDismissPopupRunnable, 2000);
@@ -294,6 +306,10 @@ public class ChartView extends FrameLayout {
         if (getParent() != null) {
             getParent().requestDisallowInterceptTouchEvent(true);
         }
+    }
+
+    private void setTarget(MotionEvent event){
+        setTarget(mChart.findTargetPosition(mViewport.valueX(event.getX())));
     }
 
     private void setTarget(int target) {
