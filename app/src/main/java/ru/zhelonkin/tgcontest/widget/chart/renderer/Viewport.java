@@ -2,7 +2,9 @@ package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.support.annotation.Keep;
+import android.util.Log;
 
 import java.util.List;
 
@@ -32,6 +34,9 @@ public class Viewport {
     private ObjectAnimator mChartTopBotAnimator;
 
     private List<Graph> mGraphs;
+
+    private float yMaxFilterBuff = 1f;
+    private float yMinFilterBuff = 1f;
 
     public Viewport(ChartView view, Chart chart, List<Graph> graphs) {
         mView = view;
@@ -204,32 +209,59 @@ public class Viewport {
         return mTargetChartTop - mTargetChartBottom;
     }
 
-    public void setChartLeftAndRight(float left, float right, boolean animate) {
+    public void setChartLeftAndRight(float left, float right, boolean animate, boolean useFilter) {
         if (mChart == null) return;
+        float dx = Math.max(Math.abs(left - mChartLeft), Math.abs(right - mChartRight));
         mChartLeft = left;
         mChartRight = right;
         float[] range = calculateRangeY();
-        setChartTopAndBottom(range[1], range[0], animate);
+        setChartTopAndBottom(range[1], range[0], dx, animate, useFilter);
         mView.invalidate();
     }
 
-    public void setChartTopAndBottom(float top, float bot, boolean animate) {
+    private static final float KALMAN_FILTER_FACTOR = 0.15f;
+    private static final float KALMAN_FILTER_NOISE_FACTOR = 25f;
+
+    // Kalman filter for smooth min-max morphling
+    public float[] filterSmooth(float top, float bot, float targetTop, float targetBot, float distanceX) {
+        float filterFactor;
+        if (distanceX != 0f) {
+            filterFactor = KALMAN_FILTER_FACTOR * Math.abs(distanceX);
+        } else {
+            filterFactor = KALMAN_FILTER_FACTOR;
+        }
+
+        float targetYMax = targetTop;
+        float targetYMin = targetBot;
+        float currentYMax = top;
+        float currentYMin = bot;
+
+        float yMaxFilterPrediction = yMaxFilterBuff + filterFactor;
+        float filterNoise = KALMAN_FILTER_NOISE_FACTOR;
+        float factor = yMaxFilterPrediction / (yMaxFilterPrediction + filterNoise);
+        targetYMax = currentYMax + factor * (targetYMax - currentYMax);
+        yMaxFilterBuff = (1f - factor) * yMaxFilterPrediction;
+
+        float yMinFilterPrediction = yMinFilterBuff + filterFactor;
+        factor = yMinFilterPrediction / (yMinFilterPrediction + filterNoise);
+        targetYMin = currentYMin + factor * (targetYMin - currentYMin);
+        yMinFilterBuff = (1f - factor) * yMinFilterPrediction;
+
+        return new float[]{targetYMax, targetYMin};
+    }
+
+
+    public void setChartTopAndBottom(float top, float bot, float distanceX, boolean animate, boolean useFilter) {
         if (animate) {
-            if (mTargetChartTop != top || mTargetChartBottom != bot) {
-                mTargetChartTop = top;
-                mTargetChartBottom = bot;
-
-                if (mChartTopBotAnimator != null) mChartTopBotAnimator.cancel();
-                PropertyValuesHolder pvhTop = PropertyValuesHolder.ofFloat("chartTop", mTargetChartTop);
-                PropertyValuesHolder pvhBop = PropertyValuesHolder.ofFloat("chartBottom", mTargetChartBottom);
-                mChartTopBotAnimator = ObjectAnimator.ofPropertyValuesHolder(this, pvhTop, pvhBop);
-                mChartTopBotAnimator.addUpdateListener(animation -> {
-                    mView.invalidate();
-                });
-                mChartTopBotAnimator.setInterpolator(new FastOutSlowInInterpolator());
-                mChartTopBotAnimator.setDuration(250);
-                mChartTopBotAnimator.start();
-
+            if(useFilter){
+                setChartTopAndBottomSmooth(top, bot, distanceX);
+                animateTopAndBottom(top, bot, 8);
+            }else {
+                if (mTargetChartTop != top || mTargetChartBottom != bot) {
+                    mTargetChartTop = top;
+                    mTargetChartBottom = bot;
+                    animateTopAndBottom(mTargetChartTop, mTargetChartBottom, 0);
+                }
             }
         } else {
             mTargetChartTop = top;
@@ -239,6 +271,32 @@ public class Viewport {
             mView.invalidate();
         }
     }
+
+    private void setChartTopAndBottomSmooth(float top, float bot, float distanceX) {
+        float[] result = filterSmooth(mChartTop, mChartBottom, top, bot, distanceX * chartWidth());
+        float newTop = result[0];
+        float newBot = result[1];
+        mTargetChartTop = newTop;
+        mTargetChartBottom = newBot;
+        setChartTop(newTop);
+        setChartBottom(newBot);
+        mView.invalidate();
+    }
+
+    private void animateTopAndBottom(float top, float bot, int delay){
+        if (mChartTopBotAnimator != null) mChartTopBotAnimator.cancel();
+        PropertyValuesHolder pvhTop = PropertyValuesHolder.ofFloat("chartTop", top);
+        PropertyValuesHolder pvhBop = PropertyValuesHolder.ofFloat("chartBottom", bot);
+        mChartTopBotAnimator = ObjectAnimator.ofPropertyValuesHolder(this, pvhTop, pvhBop);
+        mChartTopBotAnimator.addUpdateListener(animation -> {
+            mView.invalidate();
+        });
+        mChartTopBotAnimator.setStartDelay(delay);
+        mChartTopBotAnimator.setInterpolator(new FastOutSlowInInterpolator());
+        mChartTopBotAnimator.setDuration(250);
+        mChartTopBotAnimator.start();
+    }
+
 
     @Keep
     public void setChartLeft(float chartLeft) {

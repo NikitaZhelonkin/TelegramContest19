@@ -194,9 +194,9 @@ public class ChartView extends FrameLayout {
 
     public void onFiltersChanged() {
         mChartRenderer.setTarget(INVALID_TARGET);
-        mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true);
+        mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true, false);
         if (mViewportSecondary != null) {
-            mViewportSecondary.setChartLeftAndRight(mViewportSecondary.getChartLeft(), mViewportSecondary.getChartRight(), true);
+            mViewportSecondary.setChartLeftAndRight(mViewportSecondary.getChartLeft(), mViewportSecondary.getChartRight(), true, false);
         }
         mAxisesRenderer.updateGrid(true);
         mGraphAnimator.animateVisibility(mChart.getGraphs());
@@ -205,9 +205,9 @@ public class ChartView extends FrameLayout {
     public void setChartLeftAndRight(float left, float right, boolean animate) {
         if (mChart == null) return;
         mChartRenderer.setTarget(INVALID_TARGET);
-        mViewport.setChartLeftAndRight(left, right, animate);
-        if (mViewportSecondary != null) {
-            mViewportSecondary.setChartLeftAndRight(left, right, animate);
+        mViewport.setChartLeftAndRight(left, right, animate, true);
+            if (mViewportSecondary != null) {
+            mViewportSecondary.setChartLeftAndRight(left, right, animate, true);
         }
         mAxisesRenderer.updateGrid(animate);
 
