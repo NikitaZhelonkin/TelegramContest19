@@ -52,7 +52,7 @@ public class AxisesRenderer extends BaseRenderer {
                           Paint gridPaint,
                           TextPaint textPaint,
                           int textPadding) {
-        super(view, chart, viewport);
+        super(viewport);
         mView = view;
         mChart = chart;
         mViewportSecondary = viewportSecondary;

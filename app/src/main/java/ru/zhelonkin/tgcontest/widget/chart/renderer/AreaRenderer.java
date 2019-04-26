@@ -22,7 +22,7 @@ public class AreaRenderer extends BaseRenderer {
     private Paint mXPaint;
 
     public AreaRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport, Paint gridPaint) {
-        super(view, chart, viewport);
+        super(viewport);
         mView = view;
         mChart = chart;
         mGraphs = graphs;

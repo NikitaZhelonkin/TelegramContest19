@@ -32,6 +32,9 @@ import ru.zhelonkin.tgcontest.widget.chart.renderer.LineRenderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.PieChartRenderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.Renderer;
 import ru.zhelonkin.tgcontest.widget.chart.renderer.Viewport;
+import ru.zhelonkin.tgcontest.widget.chart.touch.PieTouchHandler;
+import ru.zhelonkin.tgcontest.widget.chart.touch.SimpleTouchHandler;
+import ru.zhelonkin.tgcontest.widget.chart.touch.TouchHandler;
 
 public class ChartView extends FrameLayout {
 
@@ -70,6 +73,8 @@ public class ChartView extends FrameLayout {
     private AxisesRenderer mAxisesRenderer;
 
     private ChartPopupView mChartPopupView;
+
+    private TouchHandler mTouchHandler;
 
     private Path mCornerPath = new Path();
 
@@ -143,7 +148,7 @@ public class ChartView extends FrameLayout {
     private OnClickListener mOnPopupClickListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            int target = mChartRenderer.getTarget();
+            int target = mTouchHandler.getTarget();
             if (mOnPopupClickedListener != null && target != INVALID_TARGET) {
                 mOnPopupClickedListener.onPopupClicked(mChart.getXValues().get(target));
             }
@@ -176,8 +181,17 @@ public class ChartView extends FrameLayout {
             mChartRendererSecondary = null;
             mViewportSecondary = null;
         }
+        mTouchHandler = null;
+        if(mChartRenderer instanceof PieChartRenderer){
+            mTouchHandler = new PieTouchHandler(this, mChart, (PieChartRenderer) mChartRenderer);
+        }else {
+            mTouchHandler = new SimpleTouchHandler(this, mChart, mViewport);
+            if(mChartRenderer instanceof OnTargetChangeListener) ((SimpleTouchHandler) mTouchHandler).addListener((OnTargetChangeListener) mChartRenderer);
+            if(mChartRendererSecondary instanceof OnTargetChangeListener) ((SimpleTouchHandler) mTouchHandler).addListener((OnTargetChangeListener) mChartRendererSecondary);
+
+        }
         mAxisesRenderer = new AxisesRenderer(this, mChart, mViewport, mViewportSecondary, mGridPaint, mTextPaint, mTextPadding);
-        mChartRenderer.setTarget(INVALID_TARGET);
+        mTouchHandler.setTarget(INVALID_TARGET);
         invalidate();
     }
 
@@ -193,7 +207,7 @@ public class ChartView extends FrameLayout {
     }
 
     public void onFiltersChanged() {
-        mChartRenderer.setTarget(INVALID_TARGET);
+        mTouchHandler.setTarget(INVALID_TARGET);
         mViewport.setChartLeftAndRight(mViewport.getChartLeft(), mViewport.getChartRight(), true, false);
         if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(mViewportSecondary.getChartLeft(), mViewportSecondary.getChartRight(), true, false);
@@ -204,13 +218,12 @@ public class ChartView extends FrameLayout {
 
     public void setChartLeftAndRight(float left, float right, boolean animate) {
         if (mChart == null) return;
-        mChartRenderer.setTarget(INVALID_TARGET);
+        mTouchHandler.setTarget(INVALID_TARGET);
         mViewport.setChartLeftAndRight(left, right, animate, true);
             if (mViewportSecondary != null) {
             mViewportSecondary.setChartLeftAndRight(left, right, animate, true);
         }
         mAxisesRenderer.updateGrid(animate);
-
     }
 
     @Override
@@ -252,7 +265,7 @@ public class ChartView extends FrameLayout {
         if (!isEnabled() || mIsPreviewMode || mChart == null)
             return false;
 
-        return mChartRenderer.onTouchEvent(event);
+        return mTouchHandler.onTouchEvent(event);
     }
 
 

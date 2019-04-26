@@ -21,7 +21,7 @@ public class BarRenderer extends BaseRenderer {
     private Paint mBarPaint = new Paint();
 
     public BarRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport) {
-        super(view, chart, viewport);
+        super(viewport);
         mView = view;
         mChart = chart;
         mGraphs = graphs;

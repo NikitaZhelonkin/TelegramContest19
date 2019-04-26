@@ -26,7 +26,7 @@ public class LineRenderer extends BaseRenderer {
     public LineRenderer(ChartView view, Chart chart, List<Graph> graphs, Viewport viewport, Paint gridPaint,
                         int lineWidth,
                         int surfaceColor) {
-        super(view, chart, viewport);
+        super(viewport);
         mView = view;
         mChart = chart;
         mGraphs = graphs;

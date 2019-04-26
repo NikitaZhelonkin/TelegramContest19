@@ -20,8 +20,9 @@ import ru.zhelonkin.tgcontest.model.Point;
 import ru.zhelonkin.tgcontest.utils.Alpha;
 import ru.zhelonkin.tgcontest.widget.chart.ChartPopupView;
 import ru.zhelonkin.tgcontest.widget.chart.ChartView;
+import ru.zhelonkin.tgcontest.widget.chart.OnTargetChangeListener;
 
-public class PieChartRenderer implements Renderer {
+public class PieChartRenderer implements Renderer, OnTargetChangeListener {
 
     private static final int MIN_TEXT_SIZE = 10;
     private static final int MAX_TEXT_SIZE = 24;
@@ -44,10 +45,6 @@ public class PieChartRenderer implements Renderer {
     private final float mCurrentOffset;
 
     private final Slice[] mSlices;
-
-    private ChartPopupView mPopupView;
-
-    private int mTarget = ChartView.INVALID_TARGET;
 
 
     public PieChartRenderer(ChartView view, Chart chart, Viewport viewport) {
@@ -72,52 +69,16 @@ public class PieChartRenderer implements Renderer {
         for (int i = 0; i < mSlices.length; i++) {
             mSlices[i] = new Slice();
         }
-
-        mPopupView = mView.getChartPopupView();
-        mPopupView.hide(false);
     }
 
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_UP:
-                setTarget(hitItem(event.getX(), event.getY()));
-                break;
-        }
-        return true;
-    }
-
-    @Override
-    public int getTarget() {
-        return mTarget;
-    }
-
-    @Override
-    public void setTarget(int target) {
-        if (target == mTarget) {
-            target = ChartView.INVALID_TARGET;
-        }
-        if (target != mTarget) {
-            for (int i = 0; i < mSlices.length; i++) {
-                mSlices[i].animateOffset(target == i ? mCurrentOffset : 0);
-            }
-            mTarget = target;
-            if (target == ChartView.INVALID_TARGET) {
-                //hide popup
-                mPopupView.hide(true);
-            } else {
-                //display popup
-                Graph graph = mChart.getGraphs().get(target);
-                long value = mSlices[target].value;
-                ChartPopupView.Item item = new ChartPopupView.Item(value, graph.getName(), graph.getColor());
-                mPopupView.bindData(Collections.singletonList(item));
-                mPopupView.show(true);
-                mPopupView.setTranslationX(0);
-            }
-
+    public void onTargetChanged(int target) {
+        for (int i = 0; i < mSlices.length; i++) {
+            mSlices[i].animateOffset(target == i ? mCurrentOffset : 0);
         }
     }
+
 
     @Override
     public void render(Canvas canvas) {
@@ -153,29 +114,7 @@ public class PieChartRenderer implements Renderer {
         }
     }
 
-    private int hitItem(float x, float y) {
-        float lastAngle = 0;
-        float startAngle = 0;
 
-        float cx = mRectF.centerX();
-        float cy = mRectF.centerY();
-        double dst = Math.sqrt(Math.pow((cx - x), 2) + Math.pow((cy - y), 2));
-        double angle = anglePoint(x, y, cx, cy) % 360;
-
-        for (int i = 0; i < mSlices.length; i++) {
-            float percent = mSlices[i].percent;
-            float sweepAngle = 360 * percent / 100f;
-
-            float start = startAngle + lastAngle;
-            float end = start + sweepAngle;
-
-            boolean hitRadius = dst < mRectF.width() / 2;
-            boolean hitAngle = angle > start && angle < end;
-            if (hitRadius && hitAngle) return i;
-            lastAngle += sweepAngle;
-        }
-        return ChartView.INVALID_TARGET;
-    }
 
     private void invalidateBounds() {
         int viewWidth = mView.getWidth() - mView.getPaddingLeft() - mView.getPaddingRight();
@@ -253,6 +192,34 @@ public class PieChartRenderer implements Renderer {
             animator.addUpdateListener(animation -> mView.invalidate());
             animator.start();
         }
+    }
+
+    public int hitItem(float x, float y) {
+        float lastAngle = 0;
+        float startAngle = 0;
+
+        float cx = mRectF.centerX();
+        float cy = mRectF.centerY();
+        double dst = Math.sqrt(Math.pow((cx - x), 2) + Math.pow((cy - y), 2));
+        double angle = anglePoint(x, y, cx, cy) % 360;
+
+        for (int i = 0; i < mSlices.length; i++) {
+            float percent = mSlices[i].percent;
+            float sweepAngle = 360 * percent / 100f;
+
+            float start = startAngle + lastAngle;
+            float end = start + sweepAngle;
+
+            boolean hitRadius = dst < mRectF.width() / 2;
+            boolean hitAngle = angle > start && angle < end;
+            if (hitRadius && hitAngle) return i;
+            lastAngle += sweepAngle;
+        }
+        return ChartView.INVALID_TARGET;
+    }
+
+    public long getValue(int target){
+        return mSlices[target].value;
     }
 
 }

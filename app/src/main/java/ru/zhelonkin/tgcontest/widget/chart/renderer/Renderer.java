@@ -7,9 +7,4 @@ public interface Renderer {
 
     void render(Canvas canvas);
 
-    boolean onTouchEvent(MotionEvent event);
-
-    int getTarget();
-
-    void setTarget(int target);
 }
