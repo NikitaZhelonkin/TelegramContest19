@@ -1,13 +1,14 @@
 package ru.zhelonkin.tgcontest.widget.chart.renderer;
 
 
+import ru.zhelonkin.tgcontest.widget.chart.ChartView;
 import ru.zhelonkin.tgcontest.widget.chart.OnTargetChangeListener;
 
 public abstract class BaseRenderer implements Renderer, OnTargetChangeListener {
 
     private Viewport mViewport;
 
-    private int mTarget;
+    private int mTarget = ChartView.INVALID_TARGET;
 
     BaseRenderer(Viewport viewport) {
         mViewport = viewport;

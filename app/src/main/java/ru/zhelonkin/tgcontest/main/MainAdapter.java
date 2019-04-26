@@ -3,6 +3,7 @@ package ru.zhelonkin.tgcontest.main;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -133,15 +134,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             if (chart.isPercentage()) {
                 int size = chart.getXValues().size();
                 int index = Collections.binarySearch(chart.getXValues(), date);
-                int leftIndex = Math.max(0, Math.min(size - 1, index - 3));
-                int rightIndex = Math.max(0, Math.min(size - 1, index + 4));
+                int leftIndex = Math.max(0, Math.min(size, index - 3));
+                int rightIndex = Math.max(0, Math.min(size, index + 4));
 
                 Chart chartZoomed = chart.subChart(leftIndex, rightIndex);
                 chartZoomed.setPieChart(true);
-                int range = 100 / chartZoomed.getXValues().size();
-                chartZoomed.left = (100 - range) / 2f;
-                chartZoomed.right = chartZoomed.left + range;
-
+                setLeftAndRightForDate(chartZoomed, date);
                 chartWithZoom.setZoomedChart(chartZoomed);
                 notifyItemChanged(position);
                 return;
@@ -168,16 +166,17 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             task.execute();
         }
 
-        private void setLeftAndRightForDate(Chart chart, long date){
+        private void setLeftAndRightForDate(Chart chart, long date) {
             List<Long> xValues = chart.getXValues();
             Calendar leftDate = midnight(date);
             int leftIndex = Collections.binarySearch(xValues, leftDate.getTimeInMillis());
+            if (leftIndex < 0) leftIndex = -leftIndex - 1;
             Calendar rightDate = midnight(date);
             rightDate.add(Calendar.DAY_OF_YEAR, 1);
-            int rightIndex = Collections.binarySearch(xValues, rightDate.getTimeInMillis())-1;
-
-            chart.left = Math.max(0, Math.min(100, 100 * leftIndex / (float)(xValues.size())));
-            chart.right = Math.max(0, Math.min(100, 100 * rightIndex / (float) (xValues.size())));
+            int rightIndex = Collections.binarySearch(xValues, rightDate.getTimeInMillis());
+            if (rightIndex < 0) rightIndex = -rightIndex - 1;
+            chart.left = Math.max(0, Math.min(100, 100 * leftIndex / (float) (xValues.size())));
+            chart.right = Math.max(0, Math.min(100, (100) * rightIndex / (float) (xValues.size())));
         }
 
 
@@ -209,10 +208,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ChartViewHolde
             updateDateView(chart);
 
         }
-        private void updateDateView(Chart chart){
+
+        private void updateDateView(Chart chart) {
             List<Long> xValues = chart.getXValues();
-            int leftIndex =(int) ((xValues.size()) * chart.left / 100f) ;
-            int rightIndex = Math.min(xValues.size()-1, (int) ((xValues.size()) * chart.right / 100f));
+            int leftIndex = (int) ((xValues.size()) * chart.left / 100f);
+            int rightIndex = Math.min(xValues.size() - 1, (int) ((xValues.size()) * chart.right / (100+1f)));
             String leftDate = mDateFormatter.format(xValues.get(leftIndex));
             String rightDate = mDateFormatter.format(xValues.get(rightIndex));
 

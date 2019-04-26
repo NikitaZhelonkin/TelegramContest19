@@ -181,7 +181,7 @@ public class ChartView extends FrameLayout {
             mChartRendererSecondary = null;
             mViewportSecondary = null;
         }
-        mTouchHandler = null;
+        if(mTouchHandler instanceof SimpleTouchHandler) ((SimpleTouchHandler)mTouchHandler).clearListeners();
         if(mChartRenderer instanceof PieChartRenderer){
             mTouchHandler = new PieTouchHandler(this, mChart, (PieChartRenderer) mChartRenderer);
         }else {

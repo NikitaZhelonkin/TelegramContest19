@@ -56,6 +56,10 @@ public class SimpleTouchHandler implements TouchHandler {
         mOnTargetChangeListeners.add(listener);
     }
 
+    public void clearListeners(){
+        mOnTargetChangeListeners.clear();
+    }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
