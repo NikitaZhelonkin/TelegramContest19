@@ -15,4 +15,5 @@ An application for the <a href="https://t.me/contest/59">Telegram Contest 2019</
 <img src="content/screen3.png" alt="drawing" width="360"/>
 <img src="content/screen4.png" alt="drawing" width="360"/>
 <img src="content/screen5.png" alt="drawing" width="360"/>
+<img src="content/screen6.png" alt="drawing" width="360"/>
 
