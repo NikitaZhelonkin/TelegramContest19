@@ -4,9 +4,11 @@ An application for the <a href="https://t.me/contest/59">Telegram Contest 2019</
 
 <p><a href="https://t.me/contest/78">Result </a>: Won $2000 by alias Giant Fly <a href="https://contest.dev/chart-android/entry42">(#42)</a></p>
 
-### Video
+### Demo
 
-<a href="content/video.mp4">Video link</a>
+[<img src="https://www.youtube.com/about/static/svgs/icons/brand-resources/YouTube-logo-full_color_light.svg" width="120">](https://youtu.be/aMXX7QKEvEM "")
+
+[<img src="https://github.com/NikitaZhelonkin/TelegramContest19/raw/master/content/demo.gif" width="270">](https://youtu.be/aMXX7QKEvEM)
 
 ### Screenshots
 
